@@ -1,6 +1,9 @@
 # AI/responder.py
 import os
 from google import genai
+from dotenv import load_dotenv
+
+load_dotenv()  # loads variables from .env into os.environ
 
 SYSTEM_PROMPT = """
 You are a supportive task companion for a person with intellectual disability (PWID).
