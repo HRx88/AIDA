@@ -1,0 +1,21 @@
+{
+    "name": "calendar-service",
+    "version": "1.0.0",
+    "description": "Calendar and task scheduling service for AIDA with Google Calendar integration",
+    "main": "app.js",
+    "scripts": {
+        "start": "node app.js",
+        "dev": "nodemon app.js",
+        "setup-db": "node setup_db.js"
+    },
+    "dependencies": {
+        "cors": "^2.8.6",
+        "dotenv": "^17.2.3",
+        "express": "^5.2.1",
+        "googleapis": "^144.0.0",
+        "pg": "^8.17.2"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.11"
+    }
+}

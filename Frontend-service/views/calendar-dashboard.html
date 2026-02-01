@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | AIDA Calendar</title>
+    <link rel="stylesheet" href="/css/calendar.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span>🗓️</span> AIDA Schedule
+            </div>
+            <div class="header-right">
+                <div id="connectionStatus"></div>
+                <button class="btn-primary" id="googleCalendarBtn">
+                    Connect Google Calendar
+                </button>
+            </div>
+        </header>
+
+        <!-- Sidebar / Stats Area -->
+        <aside class="sidebar-content">
+            <!-- Date Navigator -->
+            <div class="date-nav">
+                <button class="btn-icon" id="prevDay">←</button>
+                <div class="current-date">
+                    <h2 id="currentDateDisplay">Today</h2>
+                    <p id="dateString">Loading date...</p>
+                </div>
+                <button class="btn-icon" id="nextDay">→</button>
+            </div>
+
+            <!-- Progress Card -->
+            <div class="card progress-card">
+                <div class="progress-ring-container">
+                    <!-- Simple percentage display for now, could be SVG ring later -->
+                    <div class="progress-percentage" id="progressPercent">0%</div>
+                    <div class="progress-label">Daily Goal</div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <p style="margin-top: 1rem; color: var(--text-muted);">
+                    <span id="completedCount">0</span> of <span id="totalCount">0</span> tasks completed
+                </p>
+            </div>
+
+            <!-- Points Card -->
+            <div class="card">
+                <div class="points-display">
+                    <span>⭐</span>
+                    <span class="points-value" id="totalPoints">0</span>
+                    <span>Pts</span>
+                </div>
+                <div class="stats-grid" style="margin-top: 1.5rem;">
+                    <div class="stat-item">
+                        <span class="stat-value" id="todayPoints">+0</span>
+                        <span class="stat-label">Today</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="weekPoints">0</span>
+                        <span class="stat-label">Week</span>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- Tasks List Section -->
+            <section>
+                <div class="task-header">
+                    <div class="task-title-group">
+                        <h2>Your Schedule</h2>
+                        <div class="calendar-views" id="calendarViewSelector" style="display: none;">
+                            <button class="view-btn active" data-view="WEEK">Week</button>
+                            <button class="view-btn" data-view="MONTH">Month</button>
+                            <button class="view-btn" data-view="AGENDA">Agenda</button>
+                        </div>
+                    </div>
+                    <button class="btn-primary" id="addTaskBtn">+ Add New Task</button>
+                </div>
+
+                <div class="task-list" id="tasksList">
+                    <!-- Tasks injected by JS -->
+                    <div style="padding: 3rem; text-align: center; color: var(--text-muted);">
+                        Loading tasks...
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" style="display: none; text-align: center; padding: 4rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">🌴</div>
+                    <h3>No tasks scheduled</h3>
+                    <p style="color: var(--text-muted);">Enjoy your free time!</p>
+                </div>
+            </section>
+        </main>
+
+        <div class="calendar-area">
+            <!-- Google Calendar Section -->
+            <section id="calendarSection" style="display: none;">
+                <div class="card" style="padding: 0; overflow: hidden; height: 1000px;">
+                    <iframe id="googleCalendarFrame" src="" style="border: 0" width="100%" height="100%" frameborder="0"
+                        scrolling="no">
+                    </iframe>
+                </div>
+            </section>
+
+            <!-- Fallback Calendar Section (Shown when not connected) -->
+            <section id="fallbackCalendarSection">
+                <div class="card">
+                    <div class="calendar-header-custom">
+                        <h3 id="calMonthYear">Month Year</h3>
+                        <div class="cal-nav">
+                            <button class="btn-icon" id="calPrevMonth">←</button>
+                            <button class="btn-icon" id="calNextMonth">→</button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid-header">
+                        <div>Sun</div>
+                        <div>Mon</div>
+                        <div>Tue</div>
+                        <div>Wed</div>
+                        <div>Thu</div>
+                        <div>Fri</div>
+                        <div>Sat</div>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- Days injected by JS -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Modals and Overlays -->
+        <div class="modal-overlay" id="addTaskModal">
+            <div class="modal-container">
+                <div class="card glass-card modal-content-anim">
+                    <div
+                        style="display: flex; justify-content: space-between; margin: 1.5rem 1.5rem 0.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-light);">
+                        <h3 style="margin:0;">Add Task</h3>
+                        <button id="closeModal"
+                            style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+                    </div>
+                    <div class="modal-content">
+                        <form id="addTaskForm">
+                            <div style="margin-bottom: 1rem;">
+                                <label for="taskTitle"
+                                    style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Task
+                                    Name</label>
+                                <input type="text" id="taskTitle" required
+                                    style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                            </div>
+                            <div class="modal-grid-2"
+                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                <div>
+                                    <label for="taskDate"
+                                        style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Date</label>
+                                    <input type="date" id="taskDate" required
+                                        style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                </div>
+                                <div>
+                                    <label for="taskTime"
+                                        style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Time</label>
+                                    <input type="time" id="taskTime"
+                                        style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <label for="taskDescription"
+                                    style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Description</label>
+                                <textarea id="taskDescription" rows="3" placeholder="Add some details..."
+                                    style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; resize: vertical;"></textarea>
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <label for="taskCategory"
+                                    style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Category</label>
+                                <select id="taskCategory"
+                                    style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                    <option value="general">General</option>
+                                    <option value="breakfast">Breakfast</option>
+                                    <option value="lunch">Lunch</option>
+                                    <option value="dinner">Dinner</option>
+                                    <option value="hygiene">Hygiene</option>
+                                    <option value="exercise">Exercise</option>
+                                    <option value="medication">Medication</option>
+                                    <option value="social">Social</option>
+                                </select>
+                            </div>
+                            <div style="margin-bottom: 2rem;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="isRoutine">
+                                    Make this a weekly routine
+                                </label>
+                            </div>
+                            <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                                <button type="button" id="cancelTask"
+                                    style="background: transparent; border: none; font-weight: 600; color: var(--text-muted); cursor: pointer;">Cancel</button>
+                                <button type="submit" class="btn-primary">Save Task</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Celebration Animation Container -->
+            <div id="celebration"
+                style="position: fixed; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; transition: opacity 0.3s;">
+                <div style="background: white; padding: 2rem; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.2); transform: scale(0.8); transition: transform 0.3s;"
+                    id="celebrationCard">
+                    <div style="font-size: 5rem;">🎉</div>
+                    <h2 style="color: var(--primary); margin: 1rem 0;">Awesome!</h2>
+                    <p style="font-size: 1.5rem; font-weight: bold; color: var(--warning);">+10 Points</p>
+                </div>
+            </div>
+
+            <script src="/js/calendar.js"></script>
+</body>
+
+</html>

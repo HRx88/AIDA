@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIDA Login</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .login-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .client-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .client-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .client-card.active {
+            border: 4px solid #3B82F6;
+            background-color: #EFF6FF;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <div class="login-container d-flex align-items-center justify-content-center p-4">
+        
+        <!-- Main Card -->
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row" style="min-height: 600px;">
+            
+            <!-- Left Side: User Type Selection -->
+            <div class="md:w-1/3 bg-slate-800 p-8 text-white flex flex-col justify-center relative">
+                <h2 class="text-3xl font-bold mb-8 text-center md:text-left">Welcome to AIDA</h2>
+                <p class="mb-8 text-slate-300">Please select your login type to continue.</p>
+                
+                <div class="space-y-4">
+                    <!-- Client Selection Button -->
+                    <div id="btn-client-mode" onclick="switchMode('client')" 
+                         class="client-card bg-slate-700 p-4 rounded-xl flex items-center space-x-4 border-2 border-transparent hover:border-blue-400">
+                        <div class="bg-blue-500 p-3 rounded-full">
+                            <i class="fa-solid fa-user-group text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg">Client Login</h3>
+                            <p class="text-sm text-slate-300">For Adults with ID/Autism</p>
+                        </div>
+                    </div>
+
+                    <!-- Staff Selection Button -->
+                    <div id="btn-staff-mode" onclick="switchMode('staff')" 
+                         class="client-card bg-slate-700 p-4 rounded-xl flex items-center space-x-4 border-2 border-transparent hover:border-green-400">
+                        <div class="bg-green-600 p-3 rounded-full">
+                            <i class="fa-solid fa-user-doctor text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg">Staff Login</h3>
+                            <p class="text-sm text-slate-300">For Minds Staff & Admin</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-8 text-sm text-slate-400 text-center md:text-left">
+                    <p>&copy; 2026 AIDA System</p>
+                </div>
+            </div>
+
+            <!-- Right Side: Login Forms -->
+            <div class="md:w-2/3 p-8 md:p-12 relative bg-white">
+                
+                <!-- CLIENT LOGIN FORM -->
+                <div id="client-login-view" class="h-full flex flex-col justify-center transition-opacity duration-300">
+                    <div class="text-center mb-8">
+                        <div class="inline-block p-4 bg-blue-100 rounded-full mb-4 text-blue-600">
+                            <i class="fa-solid fa-universal-access text-5xl"></i>
+                        </div>
+                        <h2 class="text-4xl font-extrabold text-slate-800 mb-2">Hello!</h2>
+                        <p class="text-xl text-slate-600">Please sign in to start.</p>
+                    </div>
+
+                    <form id="clientForm" class="max-w-md mx-auto w-full space-y-6">
+                        <div>
+                            <label class="block text-xl font-bold text-slate-700 mb-2">
+                                <i class="fa-solid fa-user mr-2 text-blue-500"></i> Username
+                            </label>
+                            <input type="text" id="clientUsername" 
+                                   class="w-full text-2xl p-4 border-3 border-slate-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all outline-none"
+                                   placeholder="Enter your name">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xl font-bold text-slate-700 mb-2">
+                                <i class="fa-solid fa-key mr-2 text-blue-500"></i> Password
+                            </label>
+                            <input type="password" id="clientPassword" 
+                                   class="w-full text-2xl p-4 border-3 border-slate-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all outline-none"
+                                   placeholder="Enter your password">
+                        </div>
+
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-2xl font-bold py-5 rounded-2xl shadow-lg transform active:scale-95 transition-all">
+                            LOG IN <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- STAFF LOGIN FORM -->
+                <div id="staff-login-view" class="h-full flex flex-col justify-center hidden opacity-0 transition-opacity duration-300">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-gray-800">Staff Portal</h2>
+                        <p class="text-gray-500">Secure access for healthcare professionals</p>
+                    </div>
+
+                    <form id="staffForm" class="space-y-4">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="staffUsername" placeholder="name@example.com">
+                            <label for="staffUsername">Username or Email</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" id="staffPassword" placeholder="Password">
+                            <label for="staffPassword">Password</label>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="rememberMe">
+                                <label class="form-check-label text-sm" for="rememberMe">Remember me</label>
+                            </div>
+                            <a href="#" class="text-sm text-green-600 hover:underline">Forgot password?</a>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg w-100 py-3 font-semibold shadow-sm">
+                            <i class="fa-solid fa-lock mr-2"></i> Secure Login
+                        </button>
+                    </form>
+
+                    <div class="mt-8 pt-6 border-t border-gray-100 text-center">
+                        <p class="text-sm text-gray-400">Authorized personnel only.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Javascript for Toggle Logic -->
+    <script>
+        function switchMode(mode) {
+            const clientView = document.getElementById('client-login-view');
+            const staffView = document.getElementById('staff-login-view');
+            const clientBtn = document.getElementById('btn-client-mode');
+            const staffBtn = document.getElementById('btn-staff-mode');
+
+            if (mode === 'client') {
+                // Show Client
+                clientView.classList.remove('hidden', 'opacity-0');
+                staffView.classList.add('hidden', 'opacity-0');
+                
+                // Active States
+                clientBtn.classList.add('bg-slate-600', 'border-blue-400', 'shadow-lg');
+                staffBtn.classList.remove('bg-slate-600', 'border-green-400', 'shadow-lg');
+            } else {
+                // Show Staff
+                staffView.classList.remove('hidden');
+                // Small delay for fade in
+                setTimeout(() => staffView.classList.remove('opacity-0'), 10);
+                
+                clientView.classList.add('hidden', 'opacity-0');
+
+                // Active States
+                staffBtn.classList.add('bg-slate-600', 'border-green-400', 'shadow-lg');
+                clientBtn.classList.remove('bg-slate-600', 'border-blue-400', 'shadow-lg');
+            }
+        }
+
+        // Initialize
+        switchMode('client');
+    </script>
+    <script src="js/login.js"></script>
+</body>
+</html>
