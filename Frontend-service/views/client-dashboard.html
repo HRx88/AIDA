@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Calls - AIDA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            min-height: 100vh;
+        }
+
+        .emergency-btn {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .emergency-btn:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+            }
+
+            50% {
+                box-shadow: 0 0 60px rgba(239, 68, 68, 0.8);
+            }
+        }
+
+        .scheduled-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .scheduled-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* MS Teams style incoming call modal */
+        .incoming-call-modal {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        .caller-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: avatarPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes avatarPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 20px rgba(34, 197, 94, 0);
+            }
+        }
+
+        .answer-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            animation: ringPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes ringPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .decline-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+        }
+
+        .wave-animation {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(34, 197, 94, 0.3);
+            animation: wave 2s ease-out infinite;
+        }
+
+        @keyframes wave {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        .call-alert {
+            animation: callAlert 1s ease-in-out infinite;
+        }
+
+        @keyframes callAlert {
+
+            0%,
+            100% {
+                background-color: rgba(34, 197, 94, 0.2);
+            }
+
+            50% {
+                background-color: rgba(34, 197, 94, 0.4);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="bg-slate-800/50 backdrop-blur text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold"><i class="fa-solid fa-video mr-2"></i> My Calls</h1>
+            <div class="flex items-center space-x-4">
+                <span id="userName" class="text-slate-300">Client</span>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm">
+                    <i class="fa-solid fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6">
+
+        <!-- Main Content -->
+        <div id="mainView" class="text-white">
+
+            <!-- Scheduled Calls Section -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fa-solid fa-calendar-check mr-3 text-green-400"></i>
+                    Upcoming Calls
+                </h2>
+                <div id="scheduledList" class="grid gap-4">
+                    <p class="text-blue-200">Loading scheduled calls...</p>
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="border-t border-white/20 my-8"></div>
+
+            <!-- Emergency Section -->
+            <div class="text-center">
+                <h2 class="text-2xl font-bold mb-4">
+                    <i class="fa-solid fa-exclamation-triangle mr-2 text-red-400"></i>
+                    Need Emergency Help?
+                </h2>
+                <p class="text-blue-200 mb-6 text-lg">Press the button below to call for immediate assistance</p>
+
+                <button onclick="startEmergencyCall()"
+                    class="emergency-btn bg-red-600 hover:bg-red-700 text-white font-bold shadow-2xl border-8 border-red-400">
+                    <i class="fa-solid fa-phone-volume text-4xl mb-2 block"></i>
+                    HELP
+                </button>
+
+                <!-- Quick reason buttons -->
+                <div class="flex flex-wrap justify-center gap-3 mt-6">
+                    <button onclick="setReason('I feel unwell')"
+                        class="reason-btn bg-white/20 hover:bg-white/30 px-5 py-2 rounded-full transition-all">
+                        <i class="fa-solid fa-heart-pulse mr-2"></i> Unwell
+                    </button>
+                    <button onclick="setReason('I need to talk')"
+                        class="reason-btn bg-white/20 hover:bg-white/30 px-5 py-2 rounded-full transition-all">
+                        <i class="fa-solid fa-comments mr-2"></i> Talk
+                    </button>
+                    <button onclick="setReason('I am confused')"
+                        class="reason-btn bg-white/20 hover:bg-white/30 px-5 py-2 rounded-full transition-all">
+                        <i class="fa-solid fa-circle-question mr-2"></i> Confused
+                    </button>
+                </div>
+            </div>
+
+            <!-- Call History -->
+            <div class="mt-12">
+                <h2 class="text-xl font-bold mb-4 text-white/80">
+                    <i class="fa-solid fa-history mr-2"></i> Past Calls
+                </h2>
+                <div id="historyList" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- Calling State -->
+        <div id="callingView" class="hidden text-white text-center py-20">
+            <i class="fa-solid fa-phone-volume text-8xl animate-pulse text-green-400 mb-6"></i>
+            <h1 class="text-4xl font-bold mb-2">Calling for Help...</h1>
+            <p class="text-xl text-blue-200 mb-8">Please wait, someone will answer soon</p>
+
+            <!-- Play calling sound -->
+            <audio id="callingSound" loop>
+                <source src="https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3" type="audio/mpeg">
+            </audio>
+
+            <button onclick="cancelCall()"
+                class="bg-gray-600 hover:bg-gray-700 text-white px-8 py-4 rounded-xl text-xl">
+                <i class="fa-solid fa-times mr-2"></i> Cancel
+            </button>
+        </div>
+
+        <!-- In-Call View -->
+        <div id="inCallView" class="hidden fixed inset-0 bg-black z-50">
+            <button onclick="endCall()"
+                class="absolute top-4 right-4 z-10 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl text-xl">
+                <i class="fa-solid fa-phone-slash mr-2"></i> End Call
+            </button>
+            <iframe id="callFrame" src="" allow="camera; microphone; fullscreen; display-capture"
+                class="w-full h-full"></iframe>
+        </div>
+
+    </div>
+
+    <!-- MS Teams Style Incoming Call Modal (for scheduled calls starting) -->
+    <div id="incomingCallModal" class="fixed inset-0 incoming-call-modal hidden flex items-center justify-center z-50">
+        <div class="text-center text-white">
+            <!-- Caller Avatar -->
+            <div class="relative inline-block mb-6">
+                <div class="wave-animation"></div>
+                <div class="wave-animation" style="animation-delay: 0.5s"></div>
+                <div class="wave-animation" style="animation-delay: 1s"></div>
+                <div class="caller-avatar relative z-10">
+                    <i class="fa-solid fa-user-doctor text-5xl text-white"></i>
+                </div>
+            </div>
+
+            <!-- Caller Info -->
+            <h2 id="callerName" class="text-3xl font-bold mb-2">Staff Member</h2>
+            <p id="callType" class="text-xl text-green-400 mb-2">
+                <i class="fa-solid fa-calendar-check"></i> Scheduled Check-in
+            </p>
+            <p class="text-gray-400 mb-8">Your scheduled call is starting now</p>
+
+            <!-- Answer/Decline Buttons -->
+            <div class="flex justify-center space-x-12">
+                <button onclick="declineIncomingCall()"
+                    class="decline-btn bg-red-600 hover:bg-red-700 flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-phone-slash text-2xl"></i>
+                </button>
+                <button onclick="answerIncomingCall()"
+                    class="answer-btn bg-green-500 hover:bg-green-600 flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-phone text-2xl"></i>
+                </button>
+            </div>
+
+            <div class="mt-8 flex justify-center space-x-6 text-sm text-gray-400">
+                <span><i class="fa-solid fa-phone-slash mr-1"></i> Decline</span>
+                <span><i class="fa-solid fa-phone mr-1"></i> Answer</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ringtone Audio -->
+    <audio id="ringtone" loop>
+        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const VIDEO_SERVICE = 'http://localhost:5002/api/calls';
+        let currentUser = JSON.parse(localStorage.getItem('user')) || { id: 2, fullName: 'Client' };
+        let emergencyReason = 'Emergency assistance needed';
+        let previousScheduledIds = [];
+        let currentIncomingCall = null;
+        let ringtone = document.getElementById('ringtone');
+        let callingSound = document.getElementById('callingSound');
+
+        document.getElementById('userName').textContent = currentUser.fullName || 'Client';
+
+        // Load calls on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCalls();
+            // Poll for new scheduled calls every 10 seconds
+            setInterval(checkForActiveCalls, 10000);
+        });
+
+        async function loadCalls() {
+            try {
+                const response = await fetch(`${VIDEO_SERVICE}/client/${currentUser.id}`);
+                const data = await response.json();
+
+                const scheduled = data.calls.filter(c => c.status === 'scheduled');
+                const history = data.calls.filter(c => ['completed', 'cancelled'].includes(c.status));
+
+                // Track scheduled call IDs
+                previousScheduledIds = scheduled.map(c => c.id);
+
+                renderScheduledCalls(scheduled);
+                renderHistory(history);
+
+                return scheduled;
+
+            } catch (err) {
+                console.error('Failed to load calls:', err);
+                document.getElementById('scheduledList').innerHTML =
+                    '<p class="text-blue-200">No scheduled calls</p>';
+                return [];
+            }
+        }
+
+        async function checkForActiveCalls() {
+            try {
+                const response = await fetch(`${VIDEO_SERVICE}/client/${currentUser.id}`);
+                const data = await response.json();
+
+                const scheduled = data.calls.filter(c => c.status === 'scheduled');
+
+                // Check for new calls
+                for (const call of scheduled) {
+                    if (!previousScheduledIds.includes(call.id)) {
+                        // New call scheduled - show notification!
+                        showIncomingCallNotification(call);
+                        break;
+                    }
+
+                    // Check if call time is now (within 1 minute)
+                    const callTime = new Date(call.scheduled_time);
+                    const now = new Date();
+                    const diffMinutes = (callTime - now) / 60000;
+
+                    if (diffMinutes <= 1 && diffMinutes >= -5) {
+                        // Call is starting now!
+                        showIncomingCallNotification(call);
+                        break;
+                    }
+                }
+
+                previousScheduledIds = scheduled.map(c => c.id);
+                renderScheduledCalls(scheduled);
+
+            } catch (err) {
+                console.error('Error checking calls:', err);
+            }
+        }
+
+        function showIncomingCallNotification(call) {
+            currentIncomingCall = call;
+
+            // Update modal content
+            document.getElementById('callerName').textContent = call.staff_name || 'Staff Member';
+
+            // Show modal and play ringtone
+            document.getElementById('incomingCallModal').classList.remove('hidden');
+
+            // Play ringtone
+            ringtone.currentTime = 0;
+            ringtone.play().catch(e => console.log('Audio autoplay blocked:', e));
+
+            // Browser notification
+            if (Notification.permission === 'granted') {
+                new Notification('Incoming Call - AIDA', {
+                    body: `${call.staff_name || 'Staff'} is calling for your check-in`,
+                    icon: 'https://cdn-icons-png.flaticon.com/512/3616/3616215.png'
+                });
+            }
+        }
+
+        function answerIncomingCall() {
+            ringtone.pause();
+            document.getElementById('incomingCallModal').classList.add('hidden');
+
+            if (currentIncomingCall && currentIncomingCall.room_url) {
+                joinCall(currentIncomingCall.room_url);
+            }
+            currentIncomingCall = null;
+        }
+
+        function declineIncomingCall() {
+            ringtone.pause();
+            document.getElementById('incomingCallModal').classList.add('hidden');
+            currentIncomingCall = null;
+        }
+
+        function renderScheduledCalls(calls) {
+            const list = document.getElementById('scheduledList');
+
+            if (calls.length === 0) {
+                list.innerHTML = '<p class="text-blue-200">No upcoming calls scheduled</p>';
+                return;
+            }
+
+            list.innerHTML = calls.map(call => {
+                // Check if call is happening now
+                const callTime = new Date(call.scheduled_time);
+                const now = new Date();
+                const diffMinutes = (callTime - now) / 60000;
+                const isNow = diffMinutes <= 5 && diffMinutes >= -30;
+
+                return `
+                <div class="scheduled-card rounded-xl p-6 flex justify-between items-center ${isNow ? 'call-alert border-2 border-green-500' : ''}">
+                    <div>
+                        <h3 class="text-xl font-bold text-white">
+                            <i class="fa-solid fa-calendar text-green-400 mr-2"></i>
+                            Check-in with ${call.staff_name || 'Staff'}
+                            ${isNow ? '<span class="ml-2 text-sm bg-green-500 px-2 py-1 rounded animate-pulse">NOW</span>' : ''}
+                        </h3>
+                        <p class="text-blue-200 mt-2">
+                            <i class="fa-solid fa-clock mr-2"></i>
+                            ${new Date(call.scheduled_time).toLocaleString('en-SG', { timeZone: 'Asia/Singapore' })}
+                        </p>
+                        ${call.notes ? `<p class="text-white/60 mt-1 text-sm">${call.notes}</p>` : ''}
+                    </div>
+                    <button onclick="joinCall('${call.room_url}')"
+                        class="${isNow ? 'bg-green-500 animate-pulse' : 'bg-green-600'} hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold text-lg">
+                        <i class="fa-solid fa-video mr-2"></i> ${isNow ? 'Join Now' : 'Join'}
+                    </button>
+                </div>
+            `}).join('');
+        }
+
+        function renderHistory(calls) {
+            const list = document.getElementById('historyList');
+
+            if (calls.length === 0) {
+                list.innerHTML = '<p class="text-white/50 text-sm">No past calls</p>';
+                return;
+            }
+
+            list.innerHTML = calls.map(call => `
+                <div class="bg-white/5 rounded-lg p-3 flex justify-between items-center text-sm">
+                    <span class="text-white/70">
+                        ${call.call_type === 'emergency' ? '🚨 Emergency' : '📅 Check-in'}
+                        with ${call.staff_name || 'Staff'}
+                    </span>
+                    <span class="text-white/50">${new Date(call.created_at).toLocaleDateString('en-SG', { timeZone: 'Asia/Singapore' })}</span>
+                </div>
+            `).join('');
+        }
+
+        function joinCall(url) {
+            ringtone.pause();
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('inCallView').classList.remove('hidden');
+            document.getElementById('callFrame').src = url;
+        }
+
+        function setReason(reason) {
+            emergencyReason = reason;
+            document.querySelectorAll('.reason-btn').forEach(btn => {
+                btn.classList.remove('bg-green-500', 'ring-4', 'ring-white');
+            });
+            event.target.closest('button').classList.add('bg-green-500', 'ring-4', 'ring-white');
+        }
+
+        async function startEmergencyCall() {
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('callingView').classList.remove('hidden');
+
+            // Play calling sound
+            callingSound.currentTime = 0;
+            callingSound.play().catch(e => console.log('Audio blocked:', e));
+
+            try {
+                const response = await fetch(`${VIDEO_SERVICE}/emergency`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        clientId: currentUser.id,
+                        emergencyReason: emergencyReason
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.roomUrl) {
+                    callingSound.pause();
+                    document.getElementById('callingView').classList.add('hidden');
+                    document.getElementById('inCallView').classList.remove('hidden');
+                    document.getElementById('callFrame').src = data.roomUrl;
+                } else {
+                    callingSound.pause();
+                    alert('Could not connect. Please try again.');
+                    cancelCall();
+                }
+
+            } catch (err) {
+                console.error('Emergency call error:', err);
+                callingSound.pause();
+                alert('Connection error. Please try again.');
+                cancelCall();
+            }
+        }
+
+        function cancelCall() {
+            callingSound.pause();
+            document.getElementById('callingView').classList.add('hidden');
+            document.getElementById('mainView').classList.remove('hidden');
+        }
+
+        function endCall() {
+            document.getElementById('inCallView').classList.add('hidden');
+            document.getElementById('callFrame').src = '';
+            document.getElementById('mainView').classList.remove('hidden');
+            loadCalls(); // Refresh list
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+
+        // Request notification permission on load
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+
+</html>

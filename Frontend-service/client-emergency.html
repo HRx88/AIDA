@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Call - AIDA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            min-height: 100vh;
+        }
+
+        .emergency-btn {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            font-size: 2rem;
+            transition: all 0.3s ease;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .emergency-btn:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+            }
+
+            50% {
+                box-shadow: 0 0 60px rgba(239, 68, 68, 0.8);
+            }
+        }
+
+        .calling-animation {
+            animation: ring 1s ease-in-out infinite;
+        }
+
+        @keyframes ring {
+
+            0%,
+            100% {
+                transform: rotate(0);
+            }
+
+            25% {
+                transform: rotate(15deg);
+            }
+
+            75% {
+                transform: rotate(-15deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center">
+
+    <div class="text-center text-white p-8">
+
+        <!-- Main Emergency View -->
+        <div id="mainView">
+            <div class="mb-8">
+                <i class="fa-solid fa-hand-holding-heart text-6xl text-blue-300 mb-4"></i>
+                <h1 class="text-4xl font-bold mb-2">Need Help?</h1>
+                <p class="text-xl text-blue-200">Press the button below to call for help</p>
+            </div>
+
+            <button id="emergencyBtn" onclick="startEmergencyCall()"
+                class="emergency-btn bg-red-600 hover:bg-red-700 text-white font-bold shadow-2xl border-8 border-red-400">
+                <i class="fa-solid fa-phone-volume text-5xl mb-2 block"></i>
+                HELP
+            </button>
+
+            <div class="mt-12 space-y-4">
+                <p class="text-blue-200 text-lg">A staff member will connect with you</p>
+
+                <!-- Quick reason buttons -->
+                <div class="flex flex-wrap justify-center gap-3 mt-6">
+                    <button onclick="setReason('I feel unwell')"
+                        class="reason-btn bg-white/20 hover:bg-white/30 px-6 py-3 rounded-full text-lg transition-all">
+                        <i class="fa-solid fa-heart-pulse mr-2"></i> Unwell
+                    </button>
+                    <button onclick="setReason('I need someone to talk to')"
+                        class="reason-btn bg-white/20 hover:bg-white/30 px-6 py-3 rounded-full text-lg transition-all">
+                        <i class="fa-solid fa-comments mr-2"></i> Talk
+                    </button>
+                    <button onclick="setReason('I am confused')"
+                        class="reason-btn bg-white/20 hover:bg-white/30 px-6 py-3 rounded-full text-lg transition-all">
+                        <i class="fa-solid fa-circle-question mr-2"></i> Confused
+                    </button>
+                    <button onclick="setReason('Other emergency')"
+                        class="reason-btn bg-white/20 hover:bg-white/30 px-6 py-3 rounded-full text-lg transition-all">
+                        <i class="fa-solid fa-exclamation mr-2"></i> Other
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calling State -->
+        <div id="callingView" class="hidden">
+            <div class="mb-8">
+                <i class="fa-solid fa-phone-volume text-8xl calling-animation text-green-400 mb-6"></i>
+                <h1 class="text-4xl font-bold mb-2">Calling for Help...</h1>
+                <p class="text-xl text-blue-200">Please wait, someone will answer soon</p>
+            </div>
+
+            <div class="bg-white/10 rounded-2xl p-6 max-w-md mx-auto">
+                <div class="flex items-center justify-center space-x-2">
+                    <div class="w-4 h-4 bg-green-400 rounded-full animate-bounce"></div>
+                    <div class="w-4 h-4 bg-green-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                    <div class="w-4 h-4 bg-green-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                </div>
+            </div>
+
+            <button onclick="cancelCall()"
+                class="mt-8 bg-gray-600 hover:bg-gray-700 text-white px-8 py-4 rounded-xl text-xl">
+                <i class="fa-solid fa-times mr-2"></i> Cancel
+            </button>
+        </div>
+
+        <!-- In-Call View -->
+        <div id="inCallView" class="hidden fixed inset-0 bg-black">
+            <button onclick="endCall()"
+                class="absolute top-4 right-4 z-10 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl text-xl">
+                <i class="fa-solid fa-phone-slash mr-2"></i> End Call
+            </button>
+            <iframe id="callFrame" src="" allow="camera; microphone; fullscreen; display-capture"
+                class="w-full h-full"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        const API_BASE = '/api/calls';
+        let currentUser = JSON.parse(localStorage.getItem('user')) || { id: 2 }; // Default for testing
+        let emergencyReason = 'Emergency assistance needed';
+
+        function setReason(reason) {
+            emergencyReason = reason;
+            // Highlight selected button
+            document.querySelectorAll('.reason-btn').forEach(btn => {
+                btn.classList.remove('bg-green-500', 'ring-4', 'ring-white');
+            });
+            event.target.closest('button').classList.add('bg-green-500', 'ring-4', 'ring-white');
+        }
+
+        async function startEmergencyCall() {
+            // Show calling state
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('callingView').classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${API_BASE}/emergency`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        clientId: currentUser.id,
+                        emergencyReason: emergencyReason
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.roomUrl) {
+                    // Join the call
+                    document.getElementById('callingView').classList.add('hidden');
+                    document.getElementById('inCallView').classList.remove('hidden');
+                    document.getElementById('callFrame').src = data.roomUrl;
+                } else {
+                    alert('Could not connect. Please try again or call emergency services.');
+                    cancelCall();
+                }
+
+            } catch (err) {
+                console.error('Emergency call error:', err);
+                alert('Connection error. Please try again.');
+                cancelCall();
+            }
+        }
+
+        function cancelCall() {
+            document.getElementById('callingView').classList.add('hidden');
+            document.getElementById('mainView').classList.remove('hidden');
+        }
+
+        function endCall() {
+            document.getElementById('inCallView').classList.add('hidden');
+            document.getElementById('callFrame').src = '';
+            document.getElementById('mainView').classList.remove('hidden');
+
+            // Reset reason selection
+            document.querySelectorAll('.reason-btn').forEach(btn => {
+                btn.classList.remove('bg-green-500', 'ring-4', 'ring-white');
+            });
+            emergencyReason = 'Emergency assistance needed';
+        }
+    </script>
+</body>
+
+</html>
