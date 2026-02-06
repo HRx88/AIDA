@@ -7,7 +7,7 @@ from voice.TTS import speak
 from ai.responder import AIResponder
 from ai.intents import INTENT_KEYWORDS
 
-
+#testPush
 app = Flask(__name__, template_folder="../ui/screens", static_folder="../ui/static")
 
 # Create ONE AI brain instance (keeps conversation history)
