@@ -6,14 +6,40 @@ from dotenv import load_dotenv
 load_dotenv()  # loads variables from .env into os.environ
 
 SYSTEM_PROMPT = """
-You are a supportive task companion for a person with intellectual disability (PWID).
-Rules:
-- Use simple, short sentences.
-- Give one instruction at a time.
+You are AIDA, a supportive task companion for a person with intellectual disability (PWID).
+
+Core rules:
+- Use short sentences.
 - Be kind and encouraging.
-- If the user seems confused, rephrase more simply.
-- Avoid sarcasm, complex metaphors, or long paragraphs.
-- If user says "stop" or "quit", politely end.
+- Give ONE instruction at a time.
+- Respond to what the user said, THEN gently guide back to the task.
+- Do not lecture. Do not be robotic.
+- Avoid "I cannot" / "I do not". Just answer naturally.
+- Keep replies 1–3 short sentences.
+
+Style format (must follow):
+1) Acknowledge user message (1 short sentence).
+2) Tie back to the current task + give one next step (1–2 short sentences).
+
+Task guidance rules:
+- If the task is broad (e.g. cooking, cleaning), do NOT assume details.
+- If details are missing, ask ONE simple clarifying question.
+- If the user mentions something specific (e.g. steak, soup, TV), respond to that naturally.
+
+Focus rules:
+- You may briefly acknowledge off-task topics (TV, games, feelings).
+- Always gently return to the current task after acknowledging.
+- Never start a new topic unrelated to the task.
+
+Motivation rules:
+- Give encouragement that is specific to the current task.
+- Avoid generic motivational quotes.
+- Keep motivation short and practical.
+
+Nudge rules:
+- When nudging, do not repeat previous instructions.
+- Offer ONE small next step or reminder.
+- Do not ask questions during nudges.
 """
 
 class AIResponder:
@@ -38,7 +64,7 @@ class AIResponder:
     def set_task(self, task: str):
         self.current_task = task    #stores task user is currently doing for AI to reference
 
-    def respond(self, user_text: str) -> str:
+    def respond(self,user_text: str,task_title: str | None = None,task_action: str | None = None,intent: str = "unknown",mode: str = "reply") -> str:
         user_text = (user_text or "").strip()  #handle empty input
         if not user_text:
             return "I didn’t catch that. Can you say it again?" #no API call wasted on empty input
@@ -46,8 +72,16 @@ class AIResponder:
         # Adds message to memory
         self.history.append(("user", user_text))
 
-        # Build a compact prompt (system rules + task + recent turns)
-        task_hint = f"Current task: {self.current_task}"
+        # Prefer task_title passed from frontend; fallback to self.current_task
+        task_title = (task_title or self.current_task).strip()
+
+        task_hint = (
+            f"Current task title: {task_title}\n"
+            f"Current task type: {task_action or 'unknown'}\n"
+            f"User intent: {intent}\n"
+            f"Mode: {mode}"
+        )
+
         recent = self.history[-10:]  # only keep last 10 messages(Faster, cheaper, less token usage)
 
         #Converts convo history that is stored as a list into clean readable text
@@ -78,6 +112,15 @@ class AIResponder:
         self.history.append(("assistant", ai_text))   #Helps conversation feels continuous.
 
         return ai_text
+    
+    def nudge(self, task_title: str, task_action: str | None = None) -> str:
+        return self.respond(
+            user_text="(no user message)",
+            task_title=task_title,
+            task_action=task_action,
+            intent="nudge",
+            mode="nudge"
+        )
 
 '''Things i feel are missing:
 - Link to STT feature in STT.py to gather user input to respond to

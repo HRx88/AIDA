@@ -55,7 +55,7 @@ const elements = {
 document.addEventListener('DOMContentLoaded', () => {
     // Get user ID from localStorage or URL
     const urlParams = new URLSearchParams(window.location.search);
-    currentUserId = localStorage.getItem('userId') || urlParams.get('userId') || 1;
+    currentUserId = localStorage.getItem('userId') || urlParams.get('userId') || 2; // Default to 2 for testing
 
     initializeEventListeners();
     updateDateDisplay();
