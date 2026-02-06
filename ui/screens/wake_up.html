@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=800, height=480">
+    <title>AIDA - Wake Up</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-peach: #FFB5A7;
+            --primary-coral: #FF8370;
+            --bg-cream: #FFF8F3;
+            --accent-yellow: #FFD93D;
+            --text-dark: #2C3E50;
+            --text-soft: #5A6C7D;
+            --shadow-soft: rgba(255, 131, 112, 0.2);
+        }
+
+        body {
+            width: 800px;
+            height: 480px;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #FFF8F3 0%, #FFE8DC 100%);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated background elements */
+        .bg-circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.15;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .circle-1 {
+            width: 200px;
+            height: 200px;
+            background: var(--primary-coral);
+            top: -50px;
+            right: -50px;
+            animation-delay: 0s;
+        }
+
+        .circle-2 {
+            width: 150px;
+            height: 150px;
+            background: var(--accent-yellow);
+            bottom: -30px;
+            left: 50px;
+            animation-delay: 1s;
+        }
+
+        .circle-3 {
+            width: 100px;
+            height: 100px;
+            background: var(--primary-peach);
+            top: 180px;
+            left: -30px;
+            animation-delay: 2s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+
+        /* Main container */
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 35px 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Time and greeting section */
+        .header {
+            text-align: center;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .time {
+            font-size: 56px;
+            font-weight: 600;
+            color: var(--primary-coral);
+            font-family: 'Fredoka', sans-serif;
+            letter-spacing: 2px;
+            text-shadow: 2px 4px 8px var(--shadow-soft);
+        }
+
+        .greeting {
+            font-size: 26px;
+            color: var(--text-dark);
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        /* AIDA Avatar Section */
+        .avatar-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+        }
+
+        .avatar-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, var(--primary-peach) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .avatar {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            background: linear-gradient(135deg, var(--primary-coral) 0%, var(--primary-peach) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px var(--shadow-soft);
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Simplified AIDA face */
+        .face {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .eyes {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-top: 35px;
+        }
+
+        .eye {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            position: relative;
+            animation: blink 3s infinite;
+        }
+
+        .eye::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--text-dark);
+            border-radius: 50%;
+            top: 4px;
+            left: 4px;
+        }
+
+        @keyframes blink {
+            0%, 48%, 52%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.1); }
+        }
+
+        .smile {
+            width: 50px;
+            height: 25px;
+            border: 4px solid white;
+            border-top: none;
+            border-radius: 0 0 50px 50px;
+            margin: 15px auto 0;
+        }
+
+        /* Speech bubble */
+        .speech-bubble {
+            background: white;
+            padding: 20px 28px;
+            border-radius: 25px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            position: relative;
+            max-width: 550px;
+            animation: fadeIn 1.2s ease-out 0.6s both;
+        }
+
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 15px solid white;
+        }
+
+        .speech-text {
+            font-size: 22px;
+            color: var(--text-dark);
+            text-align: center;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+
+        /* Task card */
+        .task-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 18px 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            animation: fadeIn 1.4s ease-out 0.8s both;
+        }
+
+        .task-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-yellow) 0%, #FFC93D 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .task-info {
+            flex: 1;
+        }
+
+        .task-label {
+            font-size: 13px;
+            color: var(--text-soft);
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .task-name {
+            font-size: 24px;
+            color: var(--text-dark);
+            font-weight: 600;
+            font-family: 'Fredoka', sans-serif;
+            margin-top: 2px;
+        }
+
+        /* Start button */
+        .start-button {
+            width: 100%;
+            padding: 22px;
+            background: linear-gradient(135deg, var(--primary-coral) 0%, #FF6B5A 100%);
+            border: none;
+            border-radius: 20px;
+            font-size: 28px;
+            font-weight: 600;
+            color: white;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 8px 25px var(--shadow-soft);
+            transition: all 0.3s ease;
+            animation: fadeInUp 1.6s ease-out 1s both, buttonPulse 2s ease-in-out 2s infinite;
+            letter-spacing: 1px;
+        }
+
+        .start-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px var(--shadow-soft);
+        }
+
+        .start-button:active {
+            transform: translateY(0);
+        }
+
+        @keyframes buttonPulse {
+            0%, 100% { box-shadow: 0 8px 25px var(--shadow-soft); }
+            50% { box-shadow: 0 8px 35px rgba(255, 131, 112, 0.4); }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body data-page="wake_up">
+    <div class="bg-circle circle-1"></div>
+    <div class="bg-circle circle-2"></div>
+    <div class="bg-circle circle-3"></div>
+
+    <div class="container">
+        <div class="header">
+            <div class="time" id="currentTime">--:--</div>
+            <div class="greeting">
+                Good Morning, <span id="userName">—</span>! 🌅
+            </div>
+        </div>
+
+        <div class="avatar-section">
+            <div class="avatar-container">
+                <div class="avatar-glow"></div>
+                <div class="avatar">
+                    <div class="face">
+                        <div class="eyes">
+                            <div class="eye"></div>
+                            <div class="eye"></div>
+                        </div>
+                        <div class="smile"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="speech-bubble">
+                <div class="speech-text">
+                    Shall we begin with <span id="speechTaskTitle">your first task</span> today?
+                </div>
+            </div>
+            <div id="statusText" style="text-align:center;color:#5A6C7D;font-size:14px;margin-top:8px;"></div>
+
+        </div>
+
+        <div>
+            <div class="task-card">
+                <div class="task-icon" id="taskIcon">🔔</div>
+                <div class="task-info">
+                    <div class="task-label">Current Task</div>
+                    <div class="task-name" id="firstTaskTitle">—</div>
+                </div>
+            </div>
+
+            <button class="start-button" id="startBtn">START</button>
+        </div>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>

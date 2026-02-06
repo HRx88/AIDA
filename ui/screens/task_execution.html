@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=800, height=480">
+    <title>AIDA - Doing Task</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-peach: #FFB5A7;
+            --primary-coral: #FF8370;
+            --bg-cream: #FFF8F3;
+            --accent-yellow: #FFD93D;
+            --accent-blue: #6DD5FA;
+            --text-dark: #2C3E50;
+            --text-soft: #5A6C7D;
+            --shadow-soft: rgba(255, 131, 112, 0.2);
+        }
+
+        body {
+            width: 800px;
+            height: 480px;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #E8F5FF 0%, #FFF8F3 100%);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated sparkles */
+        .sparkle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-yellow);
+            border-radius: 50%;
+            opacity: 0;
+            animation: sparkleFloat 3s ease-in-out infinite;
+        }
+
+        .sparkle:nth-child(1) { top: 15%; left: 10%; animation-delay: 0s; }
+        .sparkle:nth-child(2) { top: 25%; right: 15%; animation-delay: 0.5s; }
+        .sparkle:nth-child(3) { top: 60%; left: 20%; animation-delay: 1s; }
+        .sparkle:nth-child(4) { top: 70%; right: 25%; animation-delay: 1.5s; }
+
+        @keyframes sparkleFloat {
+            0%, 100% { opacity: 0; transform: translateY(0) scale(0); }
+            50% { opacity: 1; transform: translateY(-20px) scale(1); }
+        }
+
+        /* Main container */
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 25px 35px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Top bar with task info */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .task-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .task-icon-small {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--accent-yellow) 0%, #FFC93D 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .task-title {
+            font-size: 26px;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .timer {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 15px;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--primary-coral);
+            font-family: 'Fredoka', sans-serif;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        /* Main content area - AIDA and conversation */
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 25px;
+            margin-bottom: 20px;
+        }
+
+        /* AIDA doing task animation CARD (YOU DELETED THIS) */
+        .aida-animation {
+        flex: 1;
+        background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(255, 245, 235, 0.95) 100%
+        );
+        border-radius: 25px;
+        padding: 25px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        position: relative;
+        overflow: hidden;
+        animation: fadeIn 0.8s ease-out 0.2s both;
+        }
+
+        /* Keep avatar + text spacing consistent */
+        #aidaAvatar {
+        margin: 10px 0  70px;
+        }
+        .activity-text {
+        max-width: 640px;
+        line-height: 1.3;
+        }
+
+        
+
+        .aida-label {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-soft);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+
+        @keyframes taskBounce {
+            0%, 100% { transform: rotate(-5deg) translateY(0); }
+            50% { transform: rotate(5deg) translateY(-8px); }
+        }
+
+        .activity-text {
+            font-size: 18px;
+            color: var(--text-soft);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        
+        .aida-icon-small {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, var(--primary-coral) 0%, var(--primary-peach) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .current-subtitle {
+            background: rgba(255, 211, 61, 0.3);
+            padding: 10px 15px;
+            border-radius: 12px;
+            font-size: 14px;
+            color: var(--text-dark);
+            font-style: italic;
+            text-align: center;
+            border-left: 4px solid var(--accent-yellow);
+        }
+
+        /* Bottom controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .mic-button {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--accent-yellow) 0%, #FFC93D 100%);
+            border: none;
+            border-radius: 50%;
+            font-size: 32px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(255, 217, 61, 0.3);
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(255, 217, 61, 0.4);
+        }
+
+        .mic-button:active {
+            transform: scale(0.95);
+        }
+
+        .mic-button.active {
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .done-button {
+            flex: 1;
+            padding: 20px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            border: none;
+            border-radius: 18px;
+            font-size: 26px;
+            font-weight: 600;
+            color: white;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .done-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .done-button:active {
+            transform: translateY(0);
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 6px 20px rgba(255, 217, 61, 0.3); }
+            50% { box-shadow: 0 6px 30px rgba(255, 217, 61, 0.6); }
+        }
+
+        /* =========================
+        AIDA AVATAR (CLEAN SYSTEM)
+        ========================= */
+
+        /* The circle (always visible) */
+        #aidaAvatar{
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-coral), var(--primary-peach));
+        display: grid;
+        place-items: center;
+        position: relative;
+        overflow: visible;
+        box-shadow: 0 8px 20px var(--shadow-soft);
+        animation: aidaFloat 1.6s ease-in-out infinite;
+        transform-origin: center;
+
+        /* 🔧 TUNING KNOBS (ADD THESE) */
+        --tb-x: 35%; 
+        --tb-y: 70%;
+
+        --arms-x: 50%;
+        --arms-y: 52%;
+        --arm-color: #E8F4FF; 
+
+        --pan-x: 2%; 
+        --pan-y: 74%;
+
+        --steam-x: calc(var(--pan-x) + 10px); 
+        --steam-y: calc(var(--pan-y) - 18px);
+
+        --laundry-x: 7%; 
+        --laundry-y: 80%;
+
+        --ring-x: 70%; 
+        --ring-y: 40%;
+        }
+
+        /* Soft float to feel alive */
+        @keyframes aidaFloat{
+        0%,100%{ transform: translateY(0) rotate(-3deg); }
+        50%{ transform: translateY(-6px) rotate(3deg); }
+        }
+
+        /* Stage keeps everything centered */
+        #aidaAvatar .avatar-stage{
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        }
+
+        /* Face */
+        #aidaAvatar .face{
+        position: relative;
+        z-index: 50;
+        }
+
+        /* Eyes */
+        #aidaAvatar .eyes{
+        display: flex;
+        justify-content: center;
+        gap: 22px;
+        margin-top: 28px;
+        }
+
+        #aidaAvatar .eye-closed{
+        width: 18px;
+        height: 4px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.95);
+        }
+
+        #aidaAvatar .eye{
+        width: 18px;
+        height: 4px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.95);
+        animation: blink 4s infinite;
+        }
+
+        @keyframes blink{
+        0%, 92%, 100%{ transform: scaleY(1); }
+        94%, 96%{ transform: scaleY(0.2); }
+        }
+
+        /* Mouth */
+        #aidaAvatar .mouth{
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.95);
+        margin: 12px auto 0;
+        }
+
+        /* ✅ Medicine: keep normal mouth, but "shrink" briefly during swallow */
+        #aidaAvatar[data-action="medicine"] .mouth{
+        /* keep your original size */
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        margin: 12px auto 0;
+        background: rgba(255,255,255,0.95);
+
+        /* animate the change */
+        animation: mouthToSmallSwallow 1.1s ease-in-out infinite;
+        transform-origin: center;
+        }
+
+        @keyframes mouthToSmallSwallow{
+        /* normal mouth */
+        0%, 45%, 100%{
+            border-radius: 50%;
+            transform: scale(1);
+        }
+
+        /* start swallowing: shrink towards a "small mouth" */
+        60%{
+            border-radius: 999px;
+            transform: scale(0.55, 0.35); /* smaller + flatter */
+        }
+
+        /* slight recovery / cute bounce */
+        75%{
+            border-radius: 999px;
+            transform: scale(0.75, 0.45);
+        }
+        }
+
+        /* ---------- Props system (FIXED) ---------- */
+        /* Default: ALL props hidden + NO animation */
+        #aidaAvatar .prop{
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        opacity: 0;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        z-index: 1;              /* behind face by default */
+        animation: none !important;
+        }
+
+        /* Face always above props so nothing "cuts through" */
+        #aidaAvatar .face{
+        position: relative;
+        /*z-index: 5;*/
+        }
+
+        /* Show ONLY the props for current action */
+        #aidaAvatar[data-action="hygiene_brush"] .toothbrush{ opacity: 1; animation: brushMove 0.9s ease-in-out infinite !important; z-index: 6; }
+        #aidaAvatar[data-action="food"] .spoon{ opacity: 1; animation: panTilt 1.0s ease-in-out infinite !important; z-index: 4; }
+        #aidaAvatar[data-action="food"] .steam{ opacity: 1; animation: steamUp 1.1s ease-in-out infinite !important; z-index: 4; }
+        #aidaAvatar[data-action="laundry"] .shirt{ opacity: 1; animation: basketWiggle 0.9s ease-in-out infinite !important; z-index: 4; }
+        #aidaAvatar[data-action="exercise_stretch"] .arms{ opacity: 1; animation: stretchRaise 1.2s ease-in-out infinite !important; z-index: 2;top: 54% !important; }
+        #aidaAvatar[data-action="exercise_walk"] .feet{ opacity: 1; animation: walkCycle 0.75s ease-in-out infinite !important; z-index: 2; }
+        #aidaAvatar[data-action="call"] .ring,
+        #aidaAvatar[data-action="appointment"] .ring{ opacity: 1; animation: ringPulse 0.75s ease-in-out infinite !important; z-index: 6; }
+        #aidaAvatar[data-action="medicine"] .pill{ opacity: 1; animation: pillSwallow 1.1s ease-in-out infinite !important; z-index: 6; }
+        #aidaAvatar[data-action="exercise_lift"] .prop.arms{ opacity: 1; z-index: 6; }
+
+        /* ---------- Toothbrush (BRUSH TEETH) ---------- */
+        #aidaAvatar .toothbrush{
+        width: 60px;
+        height: 10px;
+        border-radius: 8px;
+        background: var(--accent-blue);
+        left: var(--tb-x);
+        top: var(--tb-y);                /* LOWER so it doesn't cross the eyes */
+        }
+
+        #aidaAvatar .toothbrush::after{
+        content:"";
+        position:absolute;
+        right:-16px;
+        top:-4px;
+        width:20px;
+        height:18px;
+        background:#fff;
+        border-radius:5px;
+        }
+
+        @keyframes brushMove{
+        0%,100%{ transform: translate(-50%, -50%) translate(-6px, 2px) rotate(-12deg); }
+        50%    { transform: translate(-50%, -50%) translate( 6px,-2px) rotate(  6deg); }
+        }
+
+        /* ---------- Cooking (FOOD): pan + steam ---------- */
+        #aidaAvatar .spoon{
+        /* pan */
+        position: absolute;
+        z-index: 20;
+
+        width: 52px;
+        height: 22px;
+        border-radius: 14px;
+
+        background: #222;            /* ✅ pan color */
+        border: 2px solid #000;      /* ✅ crisp edge */
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+
+        left: var(--pan-x);
+        top: var(--pan-y);
+        }
+
+        #aidaAvatar .spoon::after{
+        /* handle */
+        content:"";
+        position:absolute;
+        right:-22px;
+        top:8px;
+        width:26px;
+        height:6px;
+        border-radius:6px;
+       /* background: rgba(255,255,255,0.95);*/
+        background: #111;            /* ✅ handle color */
+        }
+
+        @keyframes panTilt{
+        0%,100%{ transform: translate(-50%, -50%) rotate(-8deg); }
+        50%    { transform: translate(-50%, -50%) rotate( 8deg); }
+        }
+
+        #aidaAvatar .steam{
+        position: absolute;
+        z-index: 30;                 /* above pan + avatar */
+        left: var(--steam-x);
+        top: var(--steam-y);
+
+        width: 10px;
+        height: 26px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.65);
+        filter: blur(0.2px);
+
+        animation: steamUp 1s ease-in-out infinite;
+        }
+
+        #aidaAvatar .steam::before,
+        #aidaAvatar .steam::after{
+        content:"";
+        position:absolute;
+        width: 10px;
+        height: 26px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.45);
+        }
+
+        #aidaAvatar .steam::before{ left: -12px; top: 6px; }
+        #aidaAvatar .steam::after { left:  12px; top: 10px; }
+
+        @keyframes steamUp{
+        0%,100%{ transform: translate(-50%, -50%) translate(0, 10px); opacity:0.25; }
+        50%    { transform: translate(-50%, -50%) translate(0,-10px); opacity:1; }
+        }
+
+        /* ---------- Laundry: basket + bubbles ---------- */
+        #aidaAvatar .shirt{
+        position: absolute;
+        left: var(--laundry-x);
+        top: var(--laundry-y);
+        transform: translate(-50%, -50%);
+        z-index: 25;
+
+        width: 54px;
+        height: 34px;
+        border-radius: 12px 12px 14px 14px;
+
+        background: rgba(255,255,255,0.92);
+        border: 2px solid rgba(0,0,0,0.08);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+
+        animation: basketWiggle 0.55s ease-in-out infinite;
+        transform-origin: 50% 85%;
+        }
+
+        #aidaAvatar .shirt::before{
+        content:"";
+        position:absolute;
+        left: 6px;
+        right: 6px;
+        top: 6px;
+        height: 8px;
+        border-radius: 10px;
+        border: 2px dashed rgba(255,131,112,0.35);
+        }
+
+        #aidaAvatar .shirt::after{
+        content:"";
+        position:absolute;
+        left: 8px;
+        top: 14px;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.10);
+
+        /* holes grid */
+        box-shadow:
+            12px 0 0 rgba(0,0,0,0.10),
+            24px 0 0 rgba(0,0,0,0.10),
+            36px 0 0 rgba(0,0,0,0.10),
+
+            0 10px 0 rgba(0,0,0,0.10),
+            12px 10px 0 rgba(0,0,0,0.10),
+            24px 10px 0 rgba(0,0,0,0.10),
+            36px 10px 0 rgba(0,0,0,0.10),
+
+            /* "clothes" peeking out above rim (soft colored blobs) */
+            6px -14px 0 4px rgba(255,131,112,0.35),
+            22px -18px 0 4px rgba(109,213,250,0.30),
+            36px -12px 0 4px rgba(255,217,61,0.28);
+        }
+
+        
+
+        @keyframes basketWiggle{
+        0%,100%{ transform: translate(-50%, -50%) rotate(-6deg); }
+        50%    { transform: translate(-50%, -50%) rotate( 6deg); }
+        }
+
+        #aidaAvatar .laundryBubbles{
+        position:absolute;
+        left: 50%;
+        top: -10px;
+        width: 10px;
+        height: 7px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.9);  /* ⬆ brighter */
+        box-shadow: /* glow */
+        0 0 8px rgba(255,255,255,0.85),
+
+        /* bubble cluster */
+        -16px 12px 0 rgba(255,255,255,0.75),
+        16px  8px 0 rgba(255,255,255,0.70),
+        -8px 26px 0 rgba(255,255,255,0.60);
+        transform: translateX(-50%);
+        animation: bubbleUp 0.9s ease-in-out infinite;
+        }
+
+        #aidaAvatar .laundryBubbles::after{
+        content:"";
+        position:absolute;
+        left: 2px;
+        top: 2px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background:rgba(215,240,255,0.95);
+        box-shadow:
+        0 0 14px rgba(120,190,255,0.95),
+        0 0 5px  rgba(180,225,255,0.9),
+        -16px 12px 0 rgba(220,245,255,0.85),
+        16px  8px 0 rgba(210,235,255,0.8),
+        -8px 26px 0 rgba(200,230,255,0.7);
+        }
+
+        @keyframes bubbleUp{
+        0%{
+            transform: translate(-50%, 10px) scale(0.8);
+            opacity: 0.3;
+        }
+        50%{
+            transform: translate(-50%, -14px) scale(1.15);
+            opacity: 1;
+        }
+        100%{
+            transform: translate(-50%, -22px) scale(0.9);
+            opacity: 0.2;
+        }
+        }
+
+       /* Arms container */
+        #aidaAvatar .arms{
+        position: absolute;
+        left: 50%;
+        top: 56%;
+        width: 140px;
+        height: 140px;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        z-index: 6; /* behind face features */
+        }
+
+        /* ===== Dumbbell is now "attached" inside arms ===== */
+        #aidaAvatar .arms .dumbbell{
+        position: absolute;
+        left: 50%;
+        top: 60px;                 /* 🔧 bar sits near hands */
+        width: 86px;
+        height: 14px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.92);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.14);
+        transform: translate(-50%, -50%);
+        transform-origin: 50% 50%;
+        opacity: 0;               /* hidden by default */
+        }
+
+        /* Shoulder anchor (small piece near head) */
+        #aidaAvatar .arm{
+        position: absolute;
+        top: 60px;                 /* slightly lower = shoulder level */
+        width: 18px;               /* tiny stub (prevents crossing face) */
+        height: 14px;
+        border-radius: 14px;
+        background: var(--arm-color);
+        }
+
+        /* Main arm segment drawn OUTSIDE using ::after */
+        #aidaAvatar .arm::after{
+        content:"";
+        position: absolute;
+        top: 0;
+        width: 68px;               /* main arm length */
+        height: 14px;
+        border-radius: 14px;
+        background: var(--arm-color);
+        box-shadow: 0 2px 6px rgba(120,180,220,0.35);
+        }
+
+        /* Shoulder joint */
+        #aidaAvatar .arm::before{
+        content:"";
+        position:absolute;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--arm-color);
+        top: 50%;
+        transform: translateY(-50%);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        /* LEFT side */
+        #aidaAvatar .arm.left{
+        left: -6px;                /* sits on left edge */
+        }
+        #aidaAvatar .arm.left::before{ left: -2px; }
+        #aidaAvatar .arm.left::after{
+        right: 10px;              /* ✅ flips direction outward */
+        transform-origin: 100% 50%;/* pivot at shoulder end */
+        animation: leftStretch 1.2s ease-in-out infinite;
+        }
+
+        /* RIGHT side */
+        #aidaAvatar .arm.right{
+         right: -6px;
+         top: 54px; 
+        }
+        #aidaAvatar .arm.right::before{ right: -2px; }
+        #aidaAvatar .arm.right::after{
+        left: 10px;               /* ✅ flips direction outward */
+        width: 78px;                 /* longer reach */
+        transform-origin: 0% 50%;
+        animation: rightStretch 1.2s ease-in-out infinite;
+        }
+
+        /* ✅ Motion: rotate UP and OUT (never crosses face) */
+        @keyframes leftStretch{
+        0%,100%{ transform: rotate(-25deg) translateX(-6px); }
+        50%    { transform: rotate(-110deg) translateX(-18px); }
+        }
+
+        @keyframes rightStretch{
+        0%,100%{
+            transform: rotate(20deg) translateX(4px);
+        }
+        50%{
+            transform: rotate(120deg) translateX(10px);
+        }
+        }
+
+
+
+
+       /* ---------- Walk: legs + feet (no more beard) ---------- */
+        #aidaAvatar .feet{
+        position: absolute;
+        left: 50%;
+        top: 100%;                 /* ✅ attach to bottom edge of circle */
+        width: 110px;
+        height: 52px;
+        transform: translate(-50%, -8px); /* ✅ pull it UP so it “connects” */
+        pointer-events: none;
+        z-index: 2;                /* keep behind face, but visible */
+
+        --limb: rgba(255,255,255,0.95);
+
+        background-image:
+            linear-gradient(var(--limb), var(--limb)),
+            linear-gradient(var(--limb), var(--limb)),
+            radial-gradient(closest-side, var(--limb) 98%, transparent 100%),
+            radial-gradient(closest-side, var(--limb) 98%, transparent 100%);
+
+        background-repeat: no-repeat;
+
+        background-size:
+            10px 30px,
+            10px 30px,
+            30px 14px,
+            30px 14px;
+
+        background-position:
+            36px 0px,
+            64px 0px,
+            22px 28px,
+            58px 28px;
+
+        filter: drop-shadow(0 2px 6px rgba(0,0,0,0.10));
+        }
+
+        /* Move feet forward/back + legs follow slightly */
+        @keyframes walkCycle{
+        0%,100%{
+            background-position:
+            36px 0px,
+            64px 0px,
+            22px 28px,
+            58px 28px;
+        }
+        50%{
+            background-position:
+            40px 2px,     /* left leg shifts a bit */
+            60px 2px,     /* right leg shifts a bit */
+            30px 22px,    /* left foot forward + up */
+            50px 30px;    /* right foot back */
+        }
+        }
+
+        
+        
+        /* ---------- Call / Appointment ring ---------- */
+        #aidaAvatar .ring{
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 3px solid rgba(255,255,255,0.9);
+        left: var(--ring-x);
+        top: var(--ring-y);
+        }
+
+        @keyframes ringPulse{
+        0%,100%{ transform: translate(-50%, -50%) scale(0.9); opacity:0.6; }
+        50%    { transform: translate(-50%, -50%) scale(1.25); opacity:1; }
+        }
+
+
+        /* Reduce motion */
+        @media (prefers-reduced-motion: reduce){
+        #aidaAvatar, #aidaAvatar * { animation: none !important; transition: none !important; }
+        }
+
+        /* ---------- Medicine: pill + swallow + sparkle ---------- */
+        #aidaAvatar .pill{
+        /* place near mouth */
+        left: 50%;
+        top: 72%;
+        width: 26px;
+        height: 14px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 100%);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.10);
+        }
+
+        /* capsule split line + second color */
+        #aidaAvatar .pill::before{
+        content:"";
+        position:absolute;
+        left: 50%;
+        top: 0;
+        width: 50%;
+        height: 100%;
+        border-radius: 999px;
+        transform: translateX(-1px);
+        background: linear-gradient(135deg, rgba(109,213,250,0.95) 0%, rgba(109,213,250,0.55) 100%);
+        }
+
+        /* sparkle burst */
+        #aidaAvatar .pill::after{
+        content:"";
+        position:absolute;
+        left: 50%;
+        top: 50%;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255,217,61,0.95);
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+        box-shadow:
+            14px 0 0 rgba(255,217,61,0.8),
+            -14px 0 0 rgba(255,217,61,0.75),
+            0 14px 0 rgba(255,217,61,0.7),
+            0 -14px 0 rgba(255,217,61,0.7),
+            10px 10px 0 rgba(255,217,61,0.6),
+            -10px 10px 0 rgba(255,217,61,0.55);
+        }
+
+        /* pill moves into mouth + sparkle pops */
+        @keyframes pillSwallow{
+        0%{
+            transform: translate(-50%, -50%) translateY(6px) scale(1);
+            opacity: 1;
+        }
+        45%{
+            transform: translate(-50%, -50%) translateY(-10px) scale(1);
+            opacity: 1;
+        }
+        60%{
+            transform: translate(-50%, -50%) translateY(-18px) scale(0.2);
+            opacity: 0.2;
+        }
+        75%{
+            transform: translate(-50%, -50%) translateY(-18px) scale(0.2);
+            opacity: 0;
+        }
+        100%{
+            transform: translate(-50%, -50%) translateY(6px) scale(1);
+            opacity: 1;
+        }
+        }
+
+        /* sparkle timing synced with swallow */
+        #aidaAvatar[data-action="medicine"] .pill::after{
+        animation: pillSparkle 1.1s ease-in-out infinite;
+        }
+
+        @keyframes pillSparkle{
+        0%, 55%{ opacity: 0; transform: translate(-50%,-50%) scale(0); }
+        65%{ opacity: 1; transform: translate(-50%,-50%) scale(1.2); }
+        80%{ opacity: 0; transform: translate(-50%,-50%) scale(1.8); }
+        100%{ opacity: 0; transform: translate(-50%,-50%) scale(0); }
+        }
+
+        /* Show ONLY the props for dishes (behind face) */
+        #aidaAvatar[data-action="dishes"] .plate{
+        opacity: 1;
+        animation: plateBob 1.1s ease-in-out infinite !important;
+        z-index: 10;
+        }
+        #aidaAvatar[data-action="dishes"] .sponge{
+        opacity: 1;
+        animation: spongeScrub 0.60s ease-in-out infinite !important;
+        z-index: 12;
+        }
+        #aidaAvatar[data-action="dishes"] .bubbles{
+        opacity: 1;
+        animation: bubblesRise 0.9s ease-in-out infinite !important;
+        z-index: 14;
+        }
+
+        /* Sink edge (only during dishes) */
+        #aidaAvatar[data-action="dishes"]::after{
+        content:"";
+        position:absolute;
+        left: -30px;
+        right: -30px;
+        top: 108%;
+        height: 10px;
+        border-radius: 999px;
+        background: linear-gradient(
+        to bottom,
+        rgba(120,140,165,0.55),
+        rgba(70,90,120,0.55)
+        );
+
+        box-shadow:
+            inset 0 2px 0 rgba(255,255,255,0.75),  /* crisp highlight edge */
+            inset 0 -2px 0 rgba(0,0,0,0.10),       /* inner depth */
+            0 10px 22px rgba(0,0,0,0.14);          /* outside shadow */
+        }
+
+        /* Plate */
+        #aidaAvatar .plate{
+        left: 30%;
+        top: 92%;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.92);
+        box-shadow:
+            inset 0 0 0 6px rgba(109,213,250,0.35),
+            0 8px 18px rgba(0,0,0,0.12);
+        }
+
+        @keyframes plateBob{
+        0%,100%{ transform: translate(-50%, -50%) rotate(-4deg); }
+        50%    { transform: translate(-50%, -50%) rotate( 4deg); }
+        }
+
+        /* Sponge */
+        #aidaAvatar .sponge{
+        left: 40%;
+        top: 88%;
+        width: 28px;
+        height: 18px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, rgba(255,217,61,0.95), rgba(255,201,61,0.8));
+        box-shadow: 0 6px 12px rgba(0,0,0,0.10);
+        }
+
+        #aidaAvatar .sponge::after{
+        content:"";
+        position:absolute;
+        inset: 3px 4px;
+        border-radius: 5px;
+        background: rgba(255,255,255,0.25);
+        }
+
+        /* Scrub motion */
+        @keyframes spongeScrub{
+        0%   { transform: translate(-50%, -50%) translate( 0px,  0px) rotate(-8deg); }
+        25%  { transform: translate(-50%, -50%) translate( 6px, -4px) rotate( 6deg); }
+        50%  { transform: translate(-50%, -50%) translate( 0px, -8px) rotate( 8deg); }
+        75%  { transform: translate(-50%, -50%) translate(-6px, -4px) rotate(-6deg); }
+        100% { transform: translate(-50%, -50%) translate( 0px,  0px) rotate(-8deg); }
+        }
+
+        /* Bubbles */
+        #aidaAvatar .bubbles{
+        left: 50%;
+        top: 86%;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.75);
+        box-shadow:
+            -18px 10px 0 rgba(255,255,255,0.65),
+            18px  6px 0 rgba(255,255,255,0.60),
+            -8px  24px 0 rgba(255,255,255,0.55),
+            10px  20px 0 rgba(255,255,255,0.50);
+        }
+
+        @keyframes bubblesRise{
+        0%   { transform: translate(-50%, -50%) translateY(10px) scale(0.9); opacity: 0.2; }
+        50%  { transform: translate(-50%, -50%) translateY(-8px) scale(1.2); opacity: 1; }
+        100% { transform: translate(-50%, -50%) translateY(-18px) scale(1.0); opacity: 0.0; }
+        }
+
+        /* Cleaning: show tool + dust */
+        #aidaAvatar[data-action="cleaning"] .cleanTool{
+        opacity: 1;
+        z-index: 12;
+        animation: cleanSwish 0.9s ease-in-out infinite !important;
+        }
+
+        #aidaAvatar[data-action="cleaning"] .dust{
+        opacity: 1;
+        z-index: 10;
+        animation: dustFade 0.9s ease-in-out infinite !important;
+        }
+
+        /* Cleaning tool (broom/vac head) */
+        #aidaAvatar .cleanTool{
+        left: 40%;
+        top: 90%;
+        width: 70px;
+        height: 14px;
+        border-radius: 999px;
+
+        /* slightly darker so it stands out */
+        background: rgba(255,255,255,0.96);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+
+        transform-origin: 15% 50%;
+        }
+
+        /* Vacuum/broom head */
+        #aidaAvatar .cleanTool::after{
+        content:"";
+        position:absolute;
+        right:-10px;
+        top:-6px;
+        width: 18px;
+        height: 26px;
+        border-radius: 8px;
+        background: rgba(109,213,250,0.75);
+        box-shadow: inset 0 2px 0 rgba(255,255,255,0.65);
+        }
+
+        /* ✅ Handle / stick */
+        #aidaAvatar .cleanTool::before{
+        content:"";
+        position:absolute;
+        left: 10px;
+        top: -32px;
+        width: 8px;
+        height: 46px;
+        border-radius: 8px;
+        background: rgba(90,108,125,0.35);
+        transform: rotate(-28deg);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+
+        /* Dust dots */
+        #aidaAvatar .dust{
+        left: 56%;
+        top: 92%;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(90,108,125,0.30);
+        box-shadow:
+            -22px  2px 0 rgba(90,108,125,0.22),
+            -10px -6px 0 rgba(90,108,125,0.18),
+            10px  4px 0 rgba(90,108,125,0.20),
+            22px -4px 0 rgba(90,108,125,0.16);
+        }
+
+        @keyframes cleanSwish{
+        0%   { transform: translate(-50%, -50%) rotate(-12deg) translate(-12px, 0px); }
+        50%  { transform: translate(-50%, -50%) rotate( 12deg) translate( 12px, 2px); }
+        100% { transform: translate(-50%, -50%) rotate(-12deg) translate(-12px, 0px); }
+        }
+
+        @keyframes dustFade{
+        0%   { transform: translate(-50%, -50%) translateX(0px)  scale(1);   opacity: 0.35; }
+        50%  { transform: translate(-50%, -50%) translateX(-14px) scale(0.6); opacity: 0.10; }
+        100% { transform: translate(-50%, -50%) translateX(-28px) scale(0.2); opacity: 0.0; }
+        }
+
+        #aidaAvatar[data-action="cleaning"]::after{
+        content:"";
+        position:absolute;
+        left:-35px;
+        right:-35px;
+        top:108%;
+        height:10px;
+        border-radius:999px;
+        background: linear-gradient(90deg,
+            rgba(90,108,125,0.10),
+            rgba(90,108,125,0.22),
+            rgba(90,108,125,0.10)
+        );
+        animation: floorShine 0.7s ease-in-out infinite;
+        }
+
+        @keyframes floorShine{
+        0%,100% { filter: brightness(1); transform: translateX(-6px); }
+        50%     { filter: brightness(1.2); transform: translateX(6px); }
+        }
+
+        /* =========================
+        EXERCISE: LIFT (DUMBBELL CURL) - FIXED POSITIONING
+        ========================= */
+
+       /* plates */
+        #aidaAvatar .arms .dumbbell::before,
+        #aidaAvatar .arms .dumbbell::after{
+        content:"";
+        position:absolute;
+        top: 50%;
+        width: 18px;
+        height: 28px;
+        transform: translateY(-50%);
+        border-radius: 8px;
+        background: rgba(90,108,125,0.55);
+        box-shadow: inset 0 2px 0 rgba(255,255,255,0.25);
+        }
+        #aidaAvatar .arms .dumbbell::before{ left: -8px; }
+        #aidaAvatar .arms .dumbbell::after { right: -8px; }
+
+
+        /* =========================
+        EXERCISE: LIFT (ATTACHED)
+        ========================= */
+
+        /* 🔥 ARMS SHOULD NOT USE THE DEFAULT prop CENTER ANCHOR */
+        #aidaAvatar .prop.arms{
+        left: 50%;
+        top: 88% !important;                 /* ✅ anchor near bottom of circle */
+        transform: translate(-50%, -50%) !important;
+        z-index: 6;
+        }
+
+        @keyframes stretchRaise{
+        0%,100% { transform: translate(-50%, -50%) rotate(-8deg); }
+        50%     { transform: translate(-50%, -50%) rotate( 8deg); }
+        }
+
+        
+
+        /* =========================
+        LIFT MODE — DRAWING-STYLE CURL (OVERRIDE)
+        Paste at VERY BOTTOM
+        ========================= */
+
+        #aidaAvatar[data-action="exercise_lift"] .prop.arms{
+        opacity: 1;
+        left: 50% !important;
+        top: 78% !important;                 /* under face */
+        transform: translate(-50%, -50%) !important;
+        width: 160px !important;
+        height: 120px !important;
+        z-index: 6 !important;
+        animation: liftRig 1s ease-in-out infinite !important;          /* remove bobbing for stability */
+        }
+
+        /* Dumbbell stays at bottom-center (anchor) */
+        #aidaAvatar[data-action="exercise_lift"] .prop.arms .dumbbell{
+        opacity: 1 !important;
+        left: 50% !important;
+        top: 86px !important;                /* bottom area inside arms rig */
+        transform: translate(-50%, -50%) !important;
+        animation: dumbbellCurl 1s ease-in-out infinite !important;
+        transform-origin: 50% 50%;
+        }
+
+        /* weight goes up when arms curl, down when they extend */
+        @keyframes dumbbellCurl{
+        0%,100%{
+            transform: translate(-50%, -50%) translateY(0px) rotate(0deg);
+        }
+        50%{
+            transform: translate(-50%, -50%) translateY(-22px) rotate(-4deg);
+        }
+        }
+        
+
+        /* Reset shoulder stubs */
+        #aidaAvatar[data-action="exercise_lift"] .prop.arms .arm{
+        top: 60px !important;
+        width: 18px !important;
+        height: 14px !important;
+        }
+
+        /* IMPORTANT: kill the old stretch animations (do NOT add another animation here) */
+        #aidaAvatar[data-action="exercise_lift"] .prop.arms .arm.left::after,
+        #aidaAvatar[data-action="exercise_lift"] .prop.arms .arm.right::after{
+        animation: none !important;
+        }
+
+        /* Place shoulders near the sides */
+        #aidaAvatar[data-action="exercise_lift"] .prop.arms .arm.left{
+        left: 10px !important;
+        }
+        #aidaAvatar[data-action="exercise_lift"] .prop.arms .arm.right{
+        right: 10px !important;
+        }
+
+        /* Forearms point inward toward dumbbell */
+        #aidaAvatar[data-action="exercise_lift"] .prop.arms .arm.left::after{
+        left: 12px !important;               /* go RIGHT from left shoulder */
+        right: auto !important;
+        width: 62px !important;
+        transform-origin: 0% 50% !important; /* rotate at shoulder */
+        animation: leftCurlNice 1s ease-in-out infinite !important;
+        }
+
+        #aidaAvatar[data-action="exercise_lift"] .prop.arms .arm.right::after{
+        right: 12px !important;              /* go LEFT from right shoulder */
+        left: auto !important;
+        width: 62px !important;
+        transform-origin: 100% 50% !important;
+        animation: rightCurlNice 1s ease-in-out infinite !important;
+        }
+
+        /* Curl motion: small + realistic (won’t fly away) */
+        @keyframes leftCurlNice{
+        0%,100% { transform: rotate(18deg); }
+        50%     { transform: rotate(-22deg); }
+        }
+        @keyframes rightCurlNice{
+        0%,100% { transform: rotate(-18deg); }
+        50%     { transform: rotate(22deg); }
+        }
+
+        @keyframes liftRig{
+        0%,100% { transform: translate(-50%, -50%) translateY(0px); }
+        50%     { transform: translate(-50%, -50%) translateY(-6px); }
+        }
+
+
+        /* =========================
+        STRETCH POSE — LOOK LIKE YOUR DRAWING
+        Paste at VERY BOTTOM
+        ========================= */
+
+        #aidaAvatar[data-action="exercise_stretch"] .arms{
+        top: 48% !important;              /* lift whole rig closer to head */
+        }
+
+        /* Make both shoulders sit at same height */
+        #aidaAvatar[data-action="exercise_stretch"] .arms .arm{
+        top: 44px !important;
+        }
+        #aidaAvatar[data-action="exercise_stretch"] .arms .arm.right{
+        top: 44px !important;             /* override your old top:54px */
+        }
+
+        /* Replace stretch animations ONLY during stretch */
+        #aidaAvatar[data-action="exercise_stretch"] .arms .arm.left::after{
+        animation: leftStretchUp 1.2s ease-in-out infinite !important;
+        }
+        #aidaAvatar[data-action="exercise_stretch"] .arms .arm.right::after{
+        animation: rightStretchUp 1.2s ease-in-out infinite !important;
+        }
+
+        /* LEFT arm points left by default.
+        Clockwise (+deg) lifts it upward. */
+        @keyframes leftStretchUp{
+        0%,100%{ transform: rotate(40deg)  translateX(-6px); }
+        50%    { transform: rotate(120deg) translateX(-12px); }
+        }
+
+        /* RIGHT arm points right by default.
+        Counter-clockwise (-deg) lifts it upward. */
+        @keyframes rightStretchUp{
+        0%,100%{ transform: rotate(-40deg)  translateX(6px); }
+        50%    { transform: rotate(-120deg) translateX(12px); }
+        }
+
+
+    </style>
+</head>
+<body data-page="task_execution">
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+
+    <div class="container">
+        <div class="top-bar">
+            <div class="task-header">
+                <div class="task-icon-small" id="taskIconSmall">🔔</div>
+                <div class="task-title" id="currentTaskTitle">—</div>
+            </div>
+            <div class="timer" id="currentTime">--:--</div>
+
+        </div>
+        
+        <div class="main-content">
+            <div class="aida-animation">
+                
+                <div id="avatarState" style="display:none;"></div>
+                <div class="aida-label">AIDA is with you</div>
+                <div class="aida-avatar-large" id="aidaAvatar" data-action="idle" data-mode="idle">
+                    <div class="avatar-stage">
+                        <div class="face">
+                            <div class="eyes">
+                                <div class="eye"></div>
+                                <div class="eye"></div>
+                            </div>
+                            <div class="mouth"></div>
+                        </div>
+
+                        <!-- props (always exist, CSS decides visibility/animation) -->
+                        <div class="prop toothbrush"></div>
+                        <div class="prop arms">
+                            <span class="arm left"></span>
+                            <span class="arm right"></span>
+                            <div class="dumbbell"></div>
+                        </div>
+                        
+                        <div class="prop feet"></div>
+                        <div class="prop spoon"></div>
+                        <div class="prop steam"></div>
+                        <div class="prop shirt">
+                        <div class="laundryBubbles"></div>
+                        </div>
+                        <div class="prop ring"></div>
+                        <div class="prop pill"></div>
+                        <div class="prop plate"></div>
+                        <div class="prop sponge"></div>
+                        <div class="prop bubbles"></div>
+                        <div class="prop cleanTool"></div>
+                        <div class="prop dust"></div>
+                        
+
+                </div>
+                </div>
+
+                <div class="activity-text" id="ai-text"></div>
+                <!-- 👇 THIS is what JS will update -->
+                <div class="activity-text" id="statusText">Tap the mic to speak.</div>
+                <div class="activity-text" id="userText"></div>
+                
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="mic-button" id="micBtn" title="Push to talk">🎤</button>
+            <button class="done-button" id="doneBtn">DONE ✓</button>
+        </div>
+    </div>
+
+    <!-- ✅ SCRIPT GOES HERE -->
+    <script src="/static/app.js"></script>
+</body>
+
+</html>

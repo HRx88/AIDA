@@ -8,9 +8,7 @@ const config = {
     host: process.env.SUPABASE_HOST,
     database: process.env.SUPABASE_DB,
     port: 5432,
-    ssl: {
-        rejectUnauthorized: false,
-    },
+    ssl: false, //Disabling SSL makes the connection compatible with servers that don’t support SSL.
     connectionTimeoutMillis: 60000,
 };
 

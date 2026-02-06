@@ -5,11 +5,19 @@ const Task = require('../models/taskModel');
 // Points per task completion (can be made configurable later)
 const POINTS_PER_TASK = 10;
 
+const getLocalDateString = () => {
+  // Singapore time (UTC+8). If you deploy elsewhere later, you can change this.
+  const now = new Date();
+  const sg = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Singapore" }));
+  return sg.toISOString().split("T")[0];
+};
+
 /**
  * Mark a task as complete (DONE button clicked)
  * This is the main cloud logging endpoint
  */
 const completeTask = async (req, res) => {
+    
     const { taskId, userId, scheduledDate, notes } = req.body;
 
     if (!taskId || !userId) {
@@ -17,7 +25,7 @@ const completeTask = async (req, res) => {
     }
 
     // Use current date if not provided
-    const date = scheduledDate || new Date().toISOString().split('T')[0];
+    const date = scheduledDate || getLocalDateString();
 
     try {
         // Check if task exists
@@ -125,8 +133,8 @@ const getTodayStatus = async (req, res) => {
     const { userId } = req.params;
     const { date } = req.query;
 
-    // Use provided date or default to 'today' (UTC)
-    const today = date || new Date().toISOString().split('T')[0];
+    // Use provided date or default to today (Singapore time)
+    const today = date || getLocalDateString();
 
     try {
         // Get tasks for the target date
@@ -156,7 +164,7 @@ const getTodayStatus = async (req, res) => {
             }
         });
     } catch (err) {
-        console.error('Error fetching today status:', err);
+        console.error("Error fetching today status FULL:", err?.stack || err);
         res.status(500).json({ error: 'Failed to fetch today status' });
     }
 };
