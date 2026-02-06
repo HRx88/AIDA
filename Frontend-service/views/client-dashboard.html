@@ -26,7 +26,11 @@
         .emergency-btn:hover {
             transform: scale(1.1);
         }
-
+        
+        .text-blue-200 {
+            margin-top: 20px;
+        }
+        
         @keyframes glow {
 
             0%,
@@ -113,6 +117,7 @@
             animation: wave 2s ease-out infinite;
         }
 
+
         @keyframes wave {
             0% {
                 transform: scale(1);
@@ -183,29 +188,12 @@
                     <i class="fa-solid fa-exclamation-triangle mr-2 text-red-400"></i>
                     Need Emergency Help?
                 </h2>
-                <p class="text-blue-200 mb-6 text-lg">Press the button below to call for immediate assistance</p>
-
                 <button onclick="startEmergencyCall()"
                     class="emergency-btn bg-red-600 hover:bg-red-700 text-white font-bold shadow-2xl border-8 border-red-400">
                     <i class="fa-solid fa-phone-volume text-4xl mb-2 block"></i>
                     HELP
                 </button>
-
-                <!-- Quick reason buttons -->
-                <div class="flex flex-wrap justify-center gap-3 mt-6">
-                    <button onclick="setReason('I feel unwell')"
-                        class="reason-btn bg-white/20 hover:bg-white/30 px-5 py-2 rounded-full transition-all">
-                        <i class="fa-solid fa-heart-pulse mr-2"></i> Unwell
-                    </button>
-                    <button onclick="setReason('I need to talk')"
-                        class="reason-btn bg-white/20 hover:bg-white/30 px-5 py-2 rounded-full transition-all">
-                        <i class="fa-solid fa-comments mr-2"></i> Talk
-                    </button>
-                    <button onclick="setReason('I am confused')"
-                        class="reason-btn bg-white/20 hover:bg-white/30 px-5 py-2 rounded-full transition-all">
-                        <i class="fa-solid fa-circle-question mr-2"></i> Confused
-                    </button>
-                </div>
+                <p class="text-blue-200 mb-6 text-lg">Press the button below to call for immediate assistance</p>
             </div>
 
             <!-- Call History -->
