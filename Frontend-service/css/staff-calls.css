@@ -1,0 +1,135 @@
+/* Staff Calls Dashboard Styles */
+
+/* Emergency card animation */
+.emergency-card {
+    background: linear-gradient(to right, #ffffff, #fff5f5);
+    border-left: 8px solid #ef4444 !important;
+    animation: urgentPulse 3s infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+.emergency-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at top right, rgba(239, 68, 68, 0.05), transparent);
+    pointer-events: none;
+}
+
+@keyframes urgentPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 15px -1px rgba(0, 0, 0, 0.1), 0 2px 6px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    50% {
+        box-shadow: 0 0 20px 2px rgba(239, 68, 68, 0.3);
+    }
+}
+
+/* MS Teams style incoming call modal */
+.incoming-call-modal {
+    background: radial-gradient(circle at center, rgba(30, 30, 50, 0.95) 0%, rgba(10, 10, 20, 0.98) 100%);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+}
+
+.caller-avatar {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.answer-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #22c55e !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+}
+
+.answer-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 40px rgba(34, 197, 94, 0.6);
+}
+
+.decline-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ef4444 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+}
+
+.decline-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 40px rgba(239, 68, 68, 0.6);
+}
+
+.wave-animation {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(239, 68, 68, 0.5);
+    animation: wave 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
+@keyframes wave {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+
+/* Tabs */
+.tab-btn {
+    background: transparent;
+    color: #334155;
+}
+
+.tab-btn.active {
+    background: #0f172a;
+    color: white;
+}
+
+.tab-panel {
+    animation: fadeIn 0.15s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(2px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
