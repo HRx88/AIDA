@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Pet | AIDA</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/css/client-dashboard.css">
+    <link rel="stylesheet" href="/css/happy.css">
+
+    <script>
+        // Authentication Guard
+        (function () {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!token || !user) {
+                // window.location.href = '/'; // Commented out for dev/testing ease if needed, but should be active
+            }
+
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            'aida-primary': '#2563eb',
+                            'aida-success': '#059669',
+                            'aida-danger': '#e11d48',
+                        }
+                    }
+                }
+            }
+        })();
+    </script>
+    <style>
+        /* Scoped style for the mood label to ensure it stays on top of the pet */
+        #mood-label {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Arial', sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: #555;
+            text-transform: capitalize;
+            z-index: 10;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900">
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="mb-10 flex items-center space-x-3 px-2">
+                <div
+                    class="w-10 h-10 bg-aida-primary rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+                    <i class="fa-solid fa-shield-heart text-white text-xl"></i>
+                </div>
+                <span class="logo-text text-xl font-bold tracking-tight">AIDA</span>
+            </div>
+
+            <nav class="flex-1 space-y-1">
+                <a href="/client-dashboard.html" class="nav-item">
+                    <i class="fa-solid fa-home"></i>
+                    <span class="nav-label">Home</span>
+                </a>
+                <a href="/calendar-dashboard.html" class="nav-item">
+                    <i class="fa-solid fa-calendar"></i>
+                    <span class="nav-label">Calendar</span>
+                </a>
+                <!-- Added Pet link as active for context -->
+                <a href="#" class="nav-item active">
+                    <i class="fa-solid fa-paw"></i>
+                    <span class="nav-label">My Pet</span>
+                </a>
+            </nav>
+
+            <div class="mt-auto pt-6 border-t border-slate-100">
+                <div class="flex items-center justify-between px-2 mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-user text-slate-500"></i>
+                        </div>
+                        <div class="user-details">
+                            <p id="userName" class="text-sm font-bold">User</p>
+                            <p class="text-xs text-slate-400">Basic Member</p>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile Bottom Nav -->
+        <nav class="mobile-nav">
+            <a href="/client-dashboard.html" class="text-slate-400 flex flex-col items-center">
+                <i class="fa-solid fa-home text-xl"></i>
+                <span class="text-[10px] font-bold mt-1">Home</span>
+            </a>
+            <a href="/calendar-dashboard.html" class="text-slate-400 flex flex-col items-center">
+                <i class="fa-solid fa-calendar text-xl"></i>
+                <span class="text-[10px] font-bold mt-1">Calendar</span>
+            </a>
+            <a href="#" class="text-blue-600 flex flex-col items-center">
+                <i class="fa-solid fa-paw text-xl"></i>
+                <span class="text-[10px] font-bold mt-1">Pet</span>
+            </a>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content relative h-screen">
+            <div class="pet-wrapper relative w-full h-full flex flex-col justify-center items-center">
+                <div id="mood-label">Mood: Loading...</div>
+                <div class="pet-container">
+                    <div class="pet-frame">
+                        <img id="pet-sprite" src="" alt="Pet">
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const PET_SERVICE_URL = 'http://localhost:5005';
+        const spriteElement = document.getElementById('pet-sprite');
+        const moodLabel = document.getElementById('mood-label');
+
+        let currentMood = 'happy';
+        let currentFrame = 1;
+        let totalFrames = 50;
+
+        // User Name Logic
+        const userData = JSON.parse(localStorage.getItem('user'));
+        if (userData && userData.fullName) {
+            const nameEl = document.getElementById('userName');
+            if (nameEl) nameEl.textContent = userData.fullName.split(' ')[0];
+        }
+
+        async function updateMood() {
+            try {
+                const response = await fetch(`${PET_SERVICE_URL}/api/pet/mood`);
+                const data = await response.json();
+
+                // Update label immediately
+                moodLabel.innerText = `Mood: ${data.mood}`;
+                updateBackground(data.mood);
+
+                if (data.mood !== currentMood) {
+                    currentMood = data.mood;
+                    // Update frame limits based on folder content
+                    if (currentMood === 'playing') totalFrames = 27;
+                    else totalFrames = 50;
+                    currentFrame = 1; // Reset animation on mood change
+                }
+            } catch (err) {
+                console.error("Failed to fetch mood:", err);
+                moodLabel.innerText = 'Mood: Offline';
+            }
+        }
+
+        function animate() {
+            // Capitalize first letter for internal folder structure
+            const folder = currentMood.charAt(0).toUpperCase() + currentMood.slice(1);
+            const fileName = `${folder} (${currentFrame}).png`;
+            spriteElement.src = `${PET_SERVICE_URL}/${folder}/${fileName}`;
+
+            currentFrame = (currentFrame % totalFrames) + 1;
+        }
+
+        // Update background color based on mood
+        // Modified to apply to the main content area or body, but respecting sidebar
+        function updateBackground(mood) {
+            const colors = {
+                happy: '#fff9c4',
+                bored: '#e0e0e0',
+                dirty: '#d7ccc8',
+                playing: '#b3e5fc'
+            };
+            // Apply to body is fine as sidebar sits on top with its own bg,
+            // BUT sidebar uses --bg-surface (white). 
+            // If we color body, it shows behind sidebar if sidebar is transparent? 
+            // Sidebar has background: var(--bg-surface) (white), so it's opaque.
+            // So coloring body is safe and effective for the main content area transparent background.
+            document.body.style.backgroundColor = colors[mood] || colors.happy;
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+
+        // Initial fetch
+        updateMood();
+        // Poll for mood changes every 5 seconds for more responsiveness
+        setInterval(updateMood, 5000);
+        // Animate frames
+        setInterval(animate, 100);
+    </script>
+</body>
+
+</html>
