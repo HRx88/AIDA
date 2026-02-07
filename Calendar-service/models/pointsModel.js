@@ -58,6 +58,19 @@ const getTodayPoints = async (userId) => {
 };
 
 /**
+ * Get points earned on a specific date
+ */
+const getDatePoints = async (userId, date) => {
+    const result = await db.query(
+        `SELECT COALESCE(SUM(points), 0) as date_points
+         FROM user_points
+         WHERE user_id = $1 AND DATE(created_at) = $2`,
+        [userId, date]
+    );
+    return parseInt(result.rows[0].date_points, 10);
+};
+
+/**
  * Get points earned this week
  */
 const getWeekPoints = async (userId) => {
@@ -116,6 +129,7 @@ module.exports = {
     getBalance,
     getHistory,
     getTodayPoints,
+    getDatePoints,
     getWeekPoints,
     getLeaderboard,
     getPointsByCategory

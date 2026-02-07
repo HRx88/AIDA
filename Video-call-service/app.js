@@ -9,9 +9,11 @@ const PORT = process.env.VIDEO_SERVICE_PORT || 5002;
 app.use(cors());
 app.use(express.json());
 
+const { authenticateJWT } = require('./middleware/authMiddleware');
+
 // Routes (API only - no views)
 const callRoutes = require('./routes/callRoutes');
-app.use('/api/calls', callRoutes);
+app.use('/api/calls', authenticateJWT, callRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

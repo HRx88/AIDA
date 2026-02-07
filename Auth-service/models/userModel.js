@@ -44,9 +44,19 @@ const create = async (userData) => {
     return result.rows[0];
 };
 
+// Update a user's password hash
+const updatePassword = async (userId, newPasswordHash) => {
+    const result = await db.query(
+        'UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING id',
+        [newPasswordHash, userId]
+    );
+    return result.rows[0];
+};
+
 module.exports = {
     findByUsername,
     findById,
     findAll,
-    create
+    create,
+    updatePassword
 };
