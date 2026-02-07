@@ -19,7 +19,7 @@ const findByStaffId = async (staffId) => {
         `SELECT vc.*, u.full_name as client_name 
          FROM video_calls vc
          LEFT JOIN users u ON vc.client_id = u.id
-         WHERE vc.staff_id = $1 OR (vc.call_type = 'emergency' AND vc.status = 'urgent')
+         WHERE vc.staff_id = $1 OR vc.call_type = 'emergency'
          ORDER BY vc.status = 'urgent' DESC, vc.created_at DESC`,
         [staffId]
     );
@@ -57,10 +57,39 @@ const findById = async (id) => {
     return result.rows[0] || null;
 };
 
+// Update call details (including room URLs if time changed)
+const update = async (callId, data) => {
+    const { clientId, scheduledTime, notes, roomUrl, hostUrl } = data;
+    const result = await db.query(
+        `UPDATE video_calls 
+         SET client_id = COALESCE($1, client_id), 
+             scheduled_time = COALESCE($2, scheduled_time), 
+             notes = COALESCE($3, notes),
+             room_url = COALESCE($4, room_url),
+             host_url = COALESCE($5, host_url),
+             updated_at = NOW()
+         WHERE id = $6
+         RETURNING *`,
+        [clientId || null, scheduledTime || null, notes || null, roomUrl || null, hostUrl || null, callId]
+    );
+    return result.rows[0] || null;
+};
+
+// Delete a call
+const deleteCall = async (callId) => {
+    const result = await db.query(
+        'DELETE FROM video_calls WHERE id = $1 RETURNING id',
+        [callId]
+    );
+    return result.rows[0] || null;
+};
+
 module.exports = {
     create,
     findByStaffId,
     findByClientId,
     updateStatus,
-    findById
+    findById,
+    update,
+    delete: deleteCall
 };
