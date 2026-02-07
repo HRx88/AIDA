@@ -15,7 +15,9 @@ const login = async (req, res) => {
     }
 
     try {
+        console.log(`[AUTH] Login attempt for user: ${username}`);
         const user = await User.findByUsername(username);
+        console.log(`[AUTH] User find result: ${user ? 'found' : 'not found'}`);
 
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
@@ -26,24 +28,34 @@ const login = async (req, res) => {
             return res.status(403).json({ message: `Access denied. Not a ${role} account.` });
         }
 
-        // Verify password (check plain text first for dev, then bcrypt)
+        // Verify password
         let match = false;
+        let requiresMigration = false;
 
-        // Check plain text password first (for development)
-        if (password === user.password_hash) {
+        // 1. Try bcrypt comparison first (standard)
+        try {
+            match = await bcrypt.compare(password, user.password_hash);
+        } catch (e) {
+            match = false;
+        }
+
+        // 2. If bcrypt fails, check if it's a plain text match (legacy migration)
+        if (!match && password === user.password_hash) {
             match = true;
-        } else {
-            // Try bcrypt comparison for hashed passwords
-            try {
-                match = await bcrypt.compare(password, user.password_hash);
-            } catch (e) {
-                // bcrypt failed, password doesn't match
-                match = false;
-            }
+            requiresMigration = true;
         }
 
         if (!match) {
             return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // 3. Handle Migration: If it was a plain text match, hash it and update the DB
+        if (requiresMigration) {
+            console.log(`[AUTH] Migrating user ${username} to bcrypt hash...`);
+            const saltRounds = 10;
+            const newHash = await bcrypt.hash(password, saltRounds);
+            await User.updatePassword(user.id, newHash);
+            console.log(`[AUTH] Migration complete for user ${username}.`);
         }
 
         // Generate token
@@ -66,8 +78,8 @@ const login = async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Login Error:', err);
-        res.status(500).json({ message: 'Internal server error' });
+        console.error('[AUTH ERROR] Login failed:', err);
+        res.status(500).json({ message: 'Internal server error', details: err.message });
     }
 };
 

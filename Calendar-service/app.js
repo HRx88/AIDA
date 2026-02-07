@@ -9,11 +9,13 @@ const PORT = process.env.CALENDAR_SERVICE_PORT || 5003;
 // Middleware
 app.use(cors({
   origin: "*",
-  methods: ["GET","POST","PUT","DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+const { authenticateJWT } = require('./middleware/authMiddleware');
 
 // Routes
 const scheduleRoutes = require('./routes/scheduleRoutes');
@@ -21,6 +23,9 @@ const taskRoutes = require('./routes/taskRoutes');
 const taskLogRoutes = require('./routes/taskLogRoutes');
 const pointsRoutes = require('./routes/pointsRoutes');
 const googleCalendarRoutes = require('./routes/googleCalendarRoutes');
+
+// Apply JWT protection to all /api routes
+app.use('/api', authenticateJWT);
 
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/tasks', taskRoutes);
@@ -32,12 +37,12 @@ app.use('/api/google', googleCalendarRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-    res.json({ service: 'Calendar-service', status: 'running', port: PORT });
+  res.json({ service: 'Calendar-service', status: 'running', port: PORT });
 });
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`Calendar Service running on http://localhost:${PORT}`);
+  console.log(`Calendar Service running on http://localhost:${PORT}`);
 });
 
 module.exports = app;

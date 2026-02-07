@@ -8,12 +8,33 @@ const CALENDAR_API = 'http://localhost:5003/api';
 
 // Current state
 let currentDate = new Date();
-let currentUserId = null;
+const token = localStorage.getItem('token');
+const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+let currentUserId = storedUser?.id || null;
+
+if (!token || !currentUserId) {
+    window.location.href = '/';
+}
 let tasks = [];
 let fallbackMonth = new Date(); // Track month for fallback calendar
 let currentViewMonth = null; // Track loaded Google Calendar month
 let monthlyTasks = {}; // Track monthly tasks for dots
 let calendarMode = 'WEEK'; // Default view for Google Calendar (Round 4 Reset)
+
+// Toast notification system
+function showToast(message, type = 'info') {
+    const existing = document.getElementById('toastNotification');
+    if (existing) existing.remove();
+    const colors = { success: 'bg-emerald-500', error: 'bg-red-500', warning: 'bg-amber-500', info: 'bg-blue-500' };
+    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+    const toast = document.createElement('div');
+    toast.id = 'toastNotification';
+    toast.className = `fixed top-6 right-6 z-[9999] ${colors[type]} text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center space-x-3 max-w-md`;
+    toast.style.animation = 'slideIn 0.3s ease-out';
+    toast.innerHTML = `<i class="fa-solid ${icons[type]} text-xl"></i><span class="font-medium">${message}</span><button onclick="this.parentElement.remove()" class="ml-4 hover:opacity-70"><i class="fa-solid fa-times"></i></button>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
 
 /**
  * Helper: Get YYYY-MM-DD string from local date parts
@@ -53,9 +74,12 @@ const elements = {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    // Get user ID from localStorage or URL
+    // User ID is already set from storedUser at the top of the file
+    // Only use URL param as fallback (for direct links)
     const urlParams = new URLSearchParams(window.location.search);
-    currentUserId = localStorage.getItem('userId') || urlParams.get('userId') || 2; // Default to 2 for testing
+    if (!currentUserId && urlParams.get('userId')) {
+        currentUserId = urlParams.get('userId');
+    }
 
     initializeEventListeners();
     updateDateDisplay();
@@ -72,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function handleDateChange() {
     updateDateDisplay();
     loadTasks();
+    loadPoints(); // Reload points for the new selected date
     renderFallbackCalendar();
     updateGoogleCalendarView();
 }
@@ -189,7 +214,9 @@ function getLocalDateString(date) {
 async function loadTasks() {
     try {
         const dateStr = getLocalDateString(currentDate);
-        const response = await fetch(`${CALENDAR_API}/logs/today/${currentUserId}?date=${dateStr}`);
+        const response = await fetch(`${CALENDAR_API}/logs/today/${currentUserId}?date=${dateStr}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
         if (response.ok) {
             const data = await response.json();
@@ -198,7 +225,9 @@ async function loadTasks() {
             updateProgress(data.summary || { completed: 0, total: 0 });
         } else {
             // Try loading from tasks endpoint
-            const tasksResponse = await fetch(`${CALENDAR_API}/tasks/day/${currentUserId}/${dateStr}`);
+            const tasksResponse = await fetch(`${CALENDAR_API}/tasks/day/${currentUserId}/${dateStr}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             if (tasksResponse.ok) {
                 tasks = await tasksResponse.json();
                 renderTasks(tasks);
@@ -299,7 +328,10 @@ async function completeTask(taskId) {
 
         const response = await fetch(`${CALENDAR_API}/logs/complete`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({
                 taskId,
                 userId: parseInt(currentUserId),
@@ -324,7 +356,7 @@ async function completeTask(taskId) {
             await loadTasks();
         } else {
             const error = await response.json();
-            alert(error.error || 'Failed to complete task');
+            showToast(error.error || 'Failed to complete task', 'error');
         }
     } catch (err) {
         console.error('Error completing task:', err);
@@ -355,15 +387,33 @@ function showCelebration() {
 /**
  * Load user points
  */
+let selectedDatePoints = 0; // Track points for selected date
+
 async function loadPoints() {
     try {
-        const response = await fetch(`${CALENDAR_API}/points/${currentUserId}`);
+        const dateStr = getLocalDateString(currentDate);
+        const response = await fetch(`${CALENDAR_API}/points/${currentUserId}?date=${dateStr}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
         if (response.ok) {
             const data = await response.json();
+            selectedDatePoints = data.today || 0;
             if (elements.totalPoints) elements.totalPoints.textContent = data.total || 0;
             if (elements.todayPoints) elements.todayPoints.textContent = `+ ${data.today || 0}`;
             if (elements.weekPoints) elements.weekPoints.textContent = data.thisWeek || 0;
+
+            // Update the label to show selected date or "TODAY"
+            const todayLabel = document.getElementById('todayLabel');
+            const todayCheck = new Date();
+            const isToday = currentDate.toDateString() === todayCheck.toDateString();
+            if (todayLabel) {
+                todayLabel.textContent = isToday ? 'TODAY' : currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+
+            // Update the All Done message with the selected date's points
+            const earnedEl = document.getElementById('earnedPoints');
+            if (earnedEl) earnedEl.textContent = data.today || 0;
         }
     } catch (err) {
         console.error('Error loading points:', err);
@@ -388,7 +438,10 @@ async function handleAddTask(e) {
     try {
         const response = await fetch(`${CALENDAR_API}/tasks`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({
                 userId: parseInt(currentUserId),
                 title,
@@ -417,11 +470,11 @@ async function handleAddTask(e) {
             }
         } else {
             const error = await response.json();
-            alert(error.error || 'Failed to add task');
+            showToast(error.error || 'Failed to add task', 'error');
         }
     } catch (err) {
         console.error('Error adding task:', err);
-        alert('Failed to add task. Please try again.');
+        showToast('Failed to add task. Please try again.', 'error');
     }
 }
 
@@ -469,7 +522,9 @@ async function loadMonthTasks() {
         const year = fallbackMonth.getFullYear();
         const month = fallbackMonth.getMonth() + 1; // 1-indexed for API
 
-        const response = await fetch(`${CALENDAR_API}/tasks/month/${currentUserId}/${year}/${month}`);
+        const response = await fetch(`${CALENDAR_API}/tasks/month/${currentUserId}/${year}/${month}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
         if (response.ok) {
             const tasks = await response.json();
@@ -511,7 +566,9 @@ async function loadMonthTasks() {
  */
 async function checkGoogleCalendarAuth() {
     try {
-        const response = await fetch(`${CALENDAR_API}/google-calendar/check/${currentUserId}`);
+        const response = await fetch(`${CALENDAR_API}/google-calendar/check/${currentUserId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
         if (response.ok) {
             const data = await response.json();
@@ -550,7 +607,7 @@ async function connectGoogleCalendar() {
         }
     } catch (err) {
         console.error('Error connecting to Google Calendar:', err);
-        alert('Failed to connect to Google Calendar. Please try again.');
+        showToast('Failed to connect to Google Calendar. Please try again.', 'error');
     }
 }
 
@@ -779,7 +836,41 @@ function initCalendarViewSelector() {
     });
 }
 
+/**
+ * Logout function
+ */
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/';
+}
+
+/**
+ * Initialize sidebar user info
+ */
+function initSidebarUser() {
+    const userData = JSON.parse(localStorage.getItem('user') || 'null');
+    if (userData) {
+        const sidebarUserName = document.getElementById('sidebarUserName');
+        if (sidebarUserName && userData.fullName) {
+            sidebarUserName.textContent = userData.fullName;
+        }
+    }
+}
+
+// Initialize sidebar user on DOM load
+document.addEventListener('DOMContentLoaded', () => {
+    initSidebarUser();
+
+    // Add logout button event listener
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+});
+
 // Export for global access
 window.selectDate = selectDate;
 window.completeTask = completeTask;
 window.toggleTask = toggleTask;
+window.logout = logout;
