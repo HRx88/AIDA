@@ -24,7 +24,7 @@
             }
             if (user.role !== 'staff' && user.role !== 'admin') {
                 alert('Access denied. Staff only.');
-                window.location.href = '/views/client-dashboard.html';
+                window.location.href = '/client-dashboard.html';
             }
         })();
 
@@ -39,12 +39,54 @@
                 }
             }
         }
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+
+        // Initialize Avatar on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user && user.profileImageUrl) {
+                const fullUrl = user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `http://localhost:5001${user.profileImageUrl}`;
+
+                // Update sidebar avatar
+                const sidebarAvatarContainer = document.querySelector('.sidebar .bg-slate-200');
+                if (sidebarAvatarContainer) {
+                    sidebarAvatarContainer.innerHTML = `<img src="${fullUrl}" class="w-full h-full object-cover rounded-full">`;
+                }
+
+                // Update mobile header avatar
+                const mobileAvatarContainer = document.querySelector('.mobile-header .bg-slate-900');
+                if (mobileAvatarContainer) {
+                    mobileAvatarContainer.innerHTML = `<img src="${fullUrl}" class="w-full h-full object-cover rounded-lg">`;
+                }
+            }
+        });
     </script>
 </head>
 
 <body class="bg-slate-50 text-slate-900">
 
     <div class="app-container">
+        <!-- Mobile Header -->
+        <header class="mobile-header">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
+                    <i class="fa-solid fa-user-shield text-white text-sm"></i>
+                </div>
+                <span class="font-bold">Staff Portal</span>
+            </div>
+            <button onclick="toggleSidebar()" class="menu-toggle">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </header>
+
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="mb-10 flex items-center space-x-3 px-2">
@@ -55,15 +97,15 @@
             </div>
 
             <nav class="flex-1 space-y-1">
-                <a href="#" class="nav-item active">
+                <a href="/staff-calls.html" class="nav-item active">
                     <i class="fa-solid fa-headset"></i>
                     <span class="nav-label">Calls</span>
                 </a>
-                <a href="#" class="nav-item disabled opacity-50 cursor-not-allowed">
+                <a href="/staff-clients.html" class="nav-item">
                     <i class="fa-solid fa-users"></i>
                     <span class="nav-label">Clients</span>
                 </a>
-                <a href="#" class="nav-item disabled opacity-50 cursor-not-allowed">
+                <a href="/staff-settings.html" class="nav-item">
                     <i class="fa-solid fa-cog"></i>
                     <span class="nav-label">Settings</span>
                 </a>
@@ -89,14 +131,14 @@
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 class="text-3xl font-extrabold text-slate-900">Communication Center</h1>
-                    <p class="text-slate-500">Manage checks-ins and emergency responses.</p>
+                    <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900">Communication Center</h1>
+                    <p class="text-slate-500 text-sm md:text-base">Manage checks-ins and emergency responses.</p>
                 </div>
                 <div>
                     <button onclick="openNewCallModal()"
-                        class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg flex items-center">
+                        class="bg-slate-900 text-white w-full sm:w-auto px-6 py-4 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center">
                         <i class="fa-solid fa-plus mr-2"></i> Schedule Call
                     </button>
                 </div>

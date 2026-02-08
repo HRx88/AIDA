@@ -88,6 +88,19 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPoints();
     loadMonthTasks();
     checkGoogleCalendarAuth();
+
+    // Display profile image in sidebar if available
+    if (storedUser?.profileImageUrl) {
+        const avatarContainer = document.querySelector('.user-details')?.previousElementSibling;
+        if (avatarContainer && avatarContainer.classList.contains('bg-slate-200')) {
+            avatarContainer.innerHTML = `<img src="${storedUser.profileImageUrl}" class="w-full h-full object-cover rounded-full">`;
+        }
+    }
+    // Set sidebar username
+    const sidebarUserName = document.getElementById('sidebarUserName');
+    if (sidebarUserName && storedUser?.fullName) {
+        sidebarUserName.textContent = storedUser.fullName;
+    }
 });
 
 /**
