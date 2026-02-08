@@ -1,7 +1,12 @@
 // Client Dashboard JavaScript
 const VIDEO_SERVICE = 'http://localhost:5002/api/calls';
 
-let currentUser = JSON.parse(localStorage.getItem('user')) || { id: 2, fullName: 'Client' };
+const token = localStorage.getItem('token');
+const currentUser = JSON.parse(localStorage.getItem('user'));
+
+if (!token || !currentUser) {
+    window.location.href = '/';
+}
 let emergencyReason = 'Emergency assistance needed';
 let previousScheduledIds = [];
 let currentIncomingCall = null;
@@ -63,6 +68,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('userName').textContent = currentUser.fullName || 'Client';
 
+    // Display profile image in sidebar if available
+    if (currentUser.profileImageUrl) {
+        const avatarContainer = document.querySelector('.user-details')?.previousElementSibling;
+        if (avatarContainer && avatarContainer.classList.contains('bg-slate-200')) {
+            avatarContainer.innerHTML = `<img src="${currentUser.profileImageUrl}" class="w-full h-full object-cover rounded-full">`;
+        }
+    }
+
     loadCalls();
     // Poll for active calls every 10 seconds
     setInterval(checkForActiveCalls, 10000);
@@ -75,7 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadCalls() {
     try {
-        const response = await fetch(`${VIDEO_SERVICE}/client/${currentUser.id}`);
+        const response = await fetch(`${VIDEO_SERVICE}/client/${currentUser.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         const data = await response.json();
 
         const now = new Date();
@@ -120,7 +135,9 @@ async function loadCalls() {
 
 async function checkForActiveCalls() {
     try {
-        const response = await fetch(`${VIDEO_SERVICE}/client/${currentUser.id}`);
+        const response = await fetch(`${VIDEO_SERVICE}/client/${currentUser.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         const data = await response.json();
 
         const now = new Date();
@@ -271,7 +288,24 @@ function renderScheduledCalls(calls) {
         const callTime = new Date(call.scheduled_time);
         const now = new Date();
         const diffMinutes = (callTime - now) / 60000;
-        const isNow = (diffMinutes <= 5 && diffMinutes >= -30) || call.status === 'active';
+
+        let statusText = 'Scheduled';
+        let badgeClass = 'badge-primary';
+        let isNow = false;
+
+        if (call.status === 'active') {
+            statusText = 'Live';
+            badgeClass = 'badge-success animate-pulse';
+            isNow = true;
+        } else if (diffMinutes < 0) {
+            statusText = 'Overdue';
+            badgeClass = 'badge-danger';
+            isNow = true; // Use the same styling as 'Live' for urgency
+        } else if (diffMinutes <= 15) {
+            statusText = 'Live';
+            badgeClass = 'badge-success';
+            isNow = true;
+        }
 
         return `
         <div class="card p-5 flex flex-col sm:flex-row justify-between items-center ${isNow ? 'border-blue-200 bg-blue-50/30' : ''}">
@@ -282,8 +316,8 @@ function renderScheduledCalls(calls) {
                 <div>
                     <div class="flex items-center space-x-2 mb-0.5">
                         <h3 class="font-bold text-slate-900 text-base">Check-in with ${call.staff_name || 'Staff'}</h3>
-                        <span class="badge ${isNow ? 'badge-success animate-pulse' : 'badge-primary'}">
-                            ${isNow ? 'Live' : 'Scheduled'}
+                        <span class="badge ${badgeClass}">
+                            ${statusText}
                         </span>
                     </div>
                     <p class="text-slate-500 flex items-center text-xs font-medium">
@@ -296,6 +330,7 @@ function renderScheduledCalls(calls) {
             minute: '2-digit'
         })}
                     </p>
+                    ${call.notes ? `<p class="text-slate-400 text-[11px] mt-2 italic leading-relaxed">"${call.notes}"</p>` : ''}
                 </div>
             </div>
             <button onclick="joinCall('${call.room_url}', ${call.id})"
@@ -303,7 +338,7 @@ function renderScheduledCalls(calls) {
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                 : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
             }">
-                ${isNow ? '<i class="fa-solid fa-video mr-2"></i> Join' : 'Details'}
+                <i class="fa-solid fa-video mr-2"></i> Join
             </button>
         </div>
     `}).join('');
@@ -396,7 +431,10 @@ async function startEmergencyCall() {
     try {
         const response = await fetch(`${VIDEO_SERVICE}/emergency`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({
                 clientId: currentUser.id,
                 emergencyReason: emergencyReason
@@ -411,7 +449,9 @@ async function startEmergencyCall() {
             // Poll for status change: wait until it becomes 'active' (staff answered)
             emergencyPollInterval = setInterval(async () => {
                 try {
-                    const statusRes = await fetch(`${VIDEO_SERVICE}/${data.callId}`);
+                    const statusRes = await fetch(`${VIDEO_SERVICE}/${data.callId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
                     const callData = await statusRes.json();
 
                     if (callData.status === 'active') {
@@ -470,7 +510,10 @@ async function endCall() {
         try {
             await fetch(`${VIDEO_SERVICE}/${currentCallId}/status`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({ status: 'completed' })
             });
             console.log(`Call ${currentCallId} marked as completed`);

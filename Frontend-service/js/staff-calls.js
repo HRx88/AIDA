@@ -2,7 +2,12 @@
 const VIDEO_SERVICE = 'http://localhost:5002/api/calls';
 const AUTH_SERVICE = 'http://localhost:5001/api/auth';
 
-let currentUser = JSON.parse(localStorage.getItem('user')) || { id: 1, fullName: 'Staff Member' };
+const token = localStorage.getItem('token');
+const currentUser = JSON.parse(localStorage.getItem('user'));
+
+if (!token || !currentUser || (currentUser.role !== 'staff' && currentUser.role !== 'admin')) {
+    window.location.href = '/';
+}
 let currentIncomingCall = null;
 let ringtone = null;
 let editingCallId = null;
@@ -85,7 +90,9 @@ function switchTab(tab) {
 
 async function loadCalls() {
     try {
-        const response = await fetch(`${VIDEO_SERVICE}/staff/${currentUser.id}`);
+        const response = await fetch(`${VIDEO_SERVICE}/staff/${currentUser.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         const data = await response.json();
         const allCalls = data.calls || [];
 
@@ -96,30 +103,36 @@ async function loadCalls() {
         const EXPIRY_HOURS = 2; // Calls move to history after 2 hours past scheduled time
 
         // 2. Scheduled Check-ins - show if within 2 hours after scheduled time (includes completed early)
-        const scheduled = allCalls.filter(c => {
-            if (c.call_type !== 'checkin') return false;
-            // Cancelled calls always go to history
-            if (c.status === 'cancelled') return false;
-            const callTime = new Date(c.scheduled_time);
-            const diffHours = (now - callTime) / 3600000;
-            // Show scheduled, active, OR completed calls if still within 2 hours of scheduled time
-            return diffHours < EXPIRY_HOURS;
-        });
+        const scheduled = allCalls
+            .filter(c => {
+                if (c.call_type !== 'checkin') return false;
+                // Cancelled calls always go to history
+                if (c.status === 'cancelled') return false;
+                const callTime = new Date(c.scheduled_time);
+                const diffHours = (now - callTime) / 3600000;
+                // Show scheduled, active, OR completed calls if still within 2 hours of scheduled time
+                return diffHours < EXPIRY_HOURS;
+            })
+            .sort((a, b) => new Date(a.scheduled_time) - new Date(b.scheduled_time));
 
         // 3. History - cancelled, OR any call past 2 hours after scheduled time
-        const checkinHistory = allCalls.filter(c => {
-            if (c.call_type !== 'checkin' && c.call_type) return false; // Only checkins (or legacy null type)
-            if (c.status === 'cancelled') return true; // Cancelled always goes to history
-            const callTime = new Date(c.scheduled_time);
-            const diffHours = (now - callTime) / 3600000;
-            // If 2+ hours past scheduled time, move to history
-            return diffHours >= EXPIRY_HOURS;
-        });
+        const checkinHistory = allCalls
+            .filter(c => {
+                if (c.call_type !== 'checkin' && c.call_type) return false; // Only checkins (or legacy null type)
+                if (c.status === 'cancelled') return true; // Cancelled always goes to history
+                const callTime = new Date(c.scheduled_time);
+                const diffHours = (now - callTime) / 3600000;
+                // If 2+ hours past scheduled time, move to history
+                return diffHours >= EXPIRY_HOURS;
+            })
+            .sort((a, b) => new Date(b.scheduled_time) - new Date(a.scheduled_time));
 
         // Emergency history (completed/cancelled emergency calls)
-        const emergencyHistory = allCalls.filter(c =>
-            ['completed', 'cancelled'].includes(c.status) && c.call_type === 'emergency'
-        );
+        const emergencyHistory = allCalls
+            .filter(c =>
+                ['completed', 'cancelled'].includes(c.status) && c.call_type === 'emergency'
+            )
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         renderEmergencies(emergencies);
         renderScheduled(scheduled);
@@ -139,7 +152,9 @@ async function loadCalls() {
 
 async function checkForNewEmergencies() {
     try {
-        const response = await fetch(`${VIDEO_SERVICE}/staff/${currentUser.id}`);
+        const response = await fetch(`${VIDEO_SERVICE}/staff/${currentUser.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         const data = await response.json();
         const emergencies = (data.calls || []).filter(c => c.status === 'urgent' && c.call_type === 'emergency');
 
@@ -223,31 +238,53 @@ async function markEmergencyAsMissed(callId) {
 }
 
 function showIncomingCallNotification(call) {
-    // Jump to Emergency tab to show the new alert
+    currentIncomingCall = call;
+
+    // Jump to Emergency tab
     switchTab('emergency');
 
-    // Browser notification only (no modal/ringtone)
+    // Update modal content
+    document.getElementById('callerName').textContent = call.client_name || 'Client';
+    document.getElementById('callReason').textContent = `Reason: ${call.emergency_reason || 'Needs assistance'}`;
+
+    // Show modal
+    const modal = document.getElementById('incomingCallModal');
+    if (modal) modal.classList.remove('hidden');
+
+    // Play ringtone
+    if (ringtone) {
+        ringtone.currentTime = 0;
+        ringtone.play().catch(e => console.log('Audio autoplay blocked:', e));
+    }
+
+    // Browser notification
     if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('🚨 EMERGENCY - AIDA', {
             body: `${call.client_name || 'Client'} needs immediate assistance!\n${call.emergency_reason || 'Emergency call'}`,
             icon: 'https://cdn-icons-png.flaticon.com/512/3616/3616215.png',
-            tag: `emergency-${call.id}`, // Prevents duplicate notifications
-            requireInteraction: true // Notification stays until dismissed
+            tag: `emergency-${call.id}`,
+            requireInteraction: true
         });
     }
 
     console.log(`🚨 Emergency notification shown for call #${call.id}`);
 }
 
-// Legacy functions - modal removed, emergencies are answered directly from dashboard cards
 function answerIncomingCall() {
-    // No longer used - staff clicks "JOIN EMERGENCY CALL" button directly
-    console.log('answerIncomingCall() called but modal is removed');
+    if (ringtone) ringtone.pause();
+    const modal = document.getElementById('incomingCallModal');
+    if (modal) modal.classList.add('hidden');
+
+    if (currentIncomingCall) {
+        answerEmergencyCall(currentIncomingCall.id, currentIncomingCall.host_url);
+    }
 }
 
 function declineIncomingCall() {
-    // No longer used
-    console.log('declineIncomingCall() called but modal is removed');
+    if (ringtone) ringtone.pause();
+    const modal = document.getElementById('incomingCallModal');
+    if (modal) modal.classList.add('hidden');
+    currentIncomingCall = null;
 }
 
 function renderEmergencies(calls) {
@@ -270,31 +307,29 @@ function renderEmergencies(calls) {
     }
 
     list.innerHTML = calls.map(call => `
-        <div class="emergency-card bg-white rounded-xl p-6 shadow-xl border border-red-100">
-            <div class="flex justify-between items-center">
+        <div class="card emergency-card border-l-4">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div class="flex-1">
                     <div class="flex items-center space-x-3 mb-2">
-                        <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 animate-pulse">
-                            <i class="fa-solid fa-phone-volume text-lg"></i>
+                        <div class="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 animate-pulse">
+                            <i class="fa-solid fa-tower-broadcast"></i>
                         </div>
-                        <h3 class="text-2xl font-black text-red-600 tracking-tight uppercase">
-                            URGENT: ${call.client_name || 'Client #' + call.client_id}
+                        <h3 class="text-xl font-black text-rose-600 uppercase tracking-tight">
+                            Urgent: ${call.client_name || 'Client #' + call.client_id}
                         </h3>
                     </div>
-                    <div class="bg-red-50 border-l-4 border-red-500 p-3 rounded-r-lg mb-3">
-                        <p class="text-red-800 font-bold text-lg">${call.emergency_reason || 'Emergency assistance requested'}</p>
+                    <div class="bg-rose-50/50 p-4 rounded-xl mb-2">
+                        <p class="text-slate-900 font-bold">${call.emergency_reason || 'Emergency assistance requested'}</p>
                     </div>
-                    <p class="text-sm text-gray-500 font-medium italic">
-                        <i class="fa-solid fa-clock mr-1"></i> Triggered at: ${new Date(call.created_at).toLocaleString('en-SG', { timeZone: 'Asia/Singapore' })}
+                    <p class="text-xs text-slate-500 font-medium">
+                        <i class="fa-solid fa-clock mr-1 opacity-50"></i> Signal received: ${new Date(call.created_at).toLocaleTimeString('en-SG')}
                     </p>
                 </div>
-                <div class="ml-6">
-                    <button onclick="answerEmergencyCall(${call.id}, '${call.host_url}')" 
-                        class="bg-red-600 hover:bg-black text-white px-8 py-5 rounded-2xl font-black text-xl shadow-2xl flex items-center space-x-3 active:scale-95 transition-all">
-                        <i class="fa-solid fa-video text-2xl"></i>
-                        <span>JOIN EMERGENCY CALL</span>
-                    </button>
-                </div>
+                <button onclick="answerEmergencyCall(${call.id}, '${call.host_url}')" 
+                    class="w-full md:w-auto bg-rose-600 hover:bg-rose-700 text-white px-8 py-4 rounded-xl font-bold flex items-center justify-center space-x-3 shadow-lg shadow-rose-200 transition-all active:scale-95">
+                    <i class="fa-solid fa-video"></i>
+                    <span>Connect Now</span>
+                </button>
             </div>
         </div>
     `).join('');
@@ -308,41 +343,69 @@ function renderScheduled(calls) {
         return;
     }
 
-    list.innerHTML = calls.map(call => `
-        <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-50 hover:shadow-xl transition-shadow">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h3 class="text-lg font-bold text-gray-800 flex items-center">
-                        <i class="fa-solid fa-user text-blue-500 mr-2"></i> ${call.client_name || 'Client #' + call.client_id}
-                        ${call.status === 'active' ? '<span class="ml-3 px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 animate-pulse">ACTIVE NOW</span>' : ''}
-                    </h3>
-                    <p class="text-sm text-gray-500 mt-1">
-                        <i class="fa-solid fa-clock mr-1"></i> ${new Date(call.scheduled_time).toLocaleString('en-SG', { timeZone: 'Asia/Singapore' })}
-                    </p>
-                    <p class="text-gray-600 mt-3 text-sm border-l-2 border-blue-200 pl-3 py-1">
-                        ${call.notes || '<span class="text-gray-400 italic">No notes recorded</span>'}
-                    </p>
-                    <div class="mt-2 text-xs text-gray-400">
-                        ID: #${call.id} • Created: ${new Date(call.created_at).toLocaleDateString()}
+    list.innerHTML = calls.map(call => {
+        const now = new Date();
+        const callTime = new Date(call.scheduled_time);
+        const diffMinutes = (callTime - now) / 60000;
+
+        let badgeClass = 'badge-primary';
+        let badgeText = 'Upcoming';
+
+        if (call.status === 'active') {
+            badgeClass = 'badge-success animate-pulse';
+            badgeText = 'Live Now';
+        } else if (diffMinutes < 0) {
+            badgeClass = 'badge-danger';
+            badgeText = 'Overdue';
+        } else if (diffMinutes <= 15) {
+            badgeClass = 'badge-warning';
+            badgeText = 'Due Now';
+        }
+
+        return `
+        <div class="card flex flex-col justify-between hover:shadow-md h-full ${badgeText === 'Overdue' ? 'border-rose-100 bg-rose-50/10' : ''}">
+            <div>
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="fa-solid fa-user"></i>
                     </div>
+                    <span class="badge ${badgeClass}">
+                        ${badgeText}
+                    </span>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="openEditModal(${call.id}, ${call.client_id}, '${call.scheduled_time}', '${(call.notes || '').replace(/'/g, "\\'")}')" 
-                        class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-lg transition-colors" title="Edit">
-                        <i class="fa-solid fa-edit"></i>
-                    </button>
-                    <button onclick="deleteCall(${call.id})" 
-                        class="bg-red-50 hover:bg-red-100 text-red-500 px-3 py-2 rounded-lg transition-colors" title="Delete">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                    <button onclick="startCall(${call.id}, '${call.host_url}')" 
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg flex items-center font-semibold shadow-md active:scale-95 transition-all">
-                        <i class="fa-solid fa-video mr-2"></i> ${call.status === 'active' ? 'Re-join Call' : 'Start Call'}
-                    </button>
+                <h3 class="font-bold text-slate-900 text-lg mb-1">${call.client_name || 'Client #' + call.client_id}</h3>
+                <p class="text-sm text-slate-500 flex items-center mb-4">
+                    <i class="fa-solid fa-calendar-day mr-2 opacity-50"></i>
+                    ${new Date(call.scheduled_time).toLocaleString('en-SG', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+        })}
+                </p>
+                <div class="bg-slate-50 p-3 rounded-lg text-sm text-slate-600 mb-6 italic">
+                    "${call.notes || 'No specific notes for this session'}"
                 </div>
             </div>
+            
+            <div class="flex items-center gap-2 mt-auto">
+                <button onclick="startCall(${call.id}, '${call.host_url}')" 
+                    class="flex-1 bg-slate-900 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-slate-800 transition-all">
+                    ${badgeText === 'Live Now' ? 'Join' : 'Start'} Call
+                </button>
+                <button onclick="openEditModal(${call.id}, ${call.client_id}, '${call.scheduled_time}', '${(call.notes || '').replace(/'/g, "\\'")}')" 
+                    class="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button onclick="deleteCall(${call.id})" 
+                    class="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Render emergency call history
@@ -357,21 +420,24 @@ function renderEmergencyHistory(calls) {
     }
 
     list.innerHTML = calls.map(call => `
-        <div class="bg-white rounded-xl p-5 border-l-8 border-orange-400 shadow-sm hover:shadow-md transition-shadow mb-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <div class="flex items-center space-x-2 mb-1">
-                        <i class="fa-solid fa-ambulance text-orange-500"></i>
-                        <h4 class="font-bold text-gray-800 text-lg">${call.client_name || 'Client #' + call.client_id}</h4>
-                        <span class="ml-2 px-2 py-0.5 text-xs font-bold rounded-full ${call.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} uppercase">
-                            ${call.status === 'cancelled' ? 'MISSED' : call.status}
-                        </span>
+        <div class="card p-4 hover:border-slate-300 transition-all">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-ambulance"></i>
                     </div>
-                    <p class="text-gray-700 font-medium mb-2">${call.emergency_reason || 'Emergency assistance needed'}</p>
-                    <div class="flex items-center space-x-4 text-xs text-gray-500">
-                        <span><i class="fa-solid fa-clock mr-1"></i> ${new Date(call.created_at).toLocaleString('en-SG', { timeZone: 'Asia/Singapore' })}</span>
-                        <span><i class="fa-solid fa-id-badge mr-1"></i> ID: #${call.id}</span>
+                    <div>
+                        <h4 class="font-bold text-slate-900">${call.client_name || 'Client #' + call.client_id}</h4>
+                        <p class="text-sm text-slate-600 font-medium">${call.emergency_reason || 'Emergency assistance needed'}</p>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mt-1">
+                            ${new Date(call.created_at).toLocaleString('en-SG')} • ID: #${call.id}
+                        </p>
                     </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="badge ${call.status === 'completed' ? 'badge-success' : 'badge-danger'}">
+                        ${call.status === 'cancelled' ? 'Missed' : call.status}
+                    </span>
                 </div>
             </div>
         </div>
@@ -387,25 +453,23 @@ function renderHistory(calls) {
     }
 
     list.innerHTML = calls.map(call => `
-        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h3 class="text-lg font-bold text-gray-800 flex items-center">
-                        <i class="fa-solid fa-user text-blue-500 mr-2"></i> ${call.client_name || 'Client #' + call.client_id}
-                        <span class="ml-3 px-2 py-0.5 text-xs rounded-full ${call.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
-                            ${call.status === 'cancelled' ? 'MISSED' : call.status.toUpperCase()}
-                        </span>
-                    </h3>
-                    <p class="text-sm text-gray-500 mt-1">
-                        <i class="fa-solid fa-clock mr-1"></i> Scheduled: ${new Date(call.scheduled_time).toLocaleString('en-SG', { timeZone: 'Asia/Singapore' })}
-                    </p>
-                    <p class="text-gray-600 mt-3 text-sm border-l-2 border-gray-200 pl-3 py-1">
-                        ${call.notes || '<span class="text-gray-400 italic">No notes recorded</span>'}
-                    </p>
+        <div class="card p-4 hover:bg-slate-50/50 transition-all">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900">${call.client_name || 'Client #' + call.client_id}</h3>
+                        <p class="text-xs text-slate-500 font-medium">Session: ${new Date(call.scheduled_time).toLocaleString('en-SG')}</p>
+                        <p class="text-[10px] text-slate-400 mt-1 italic">"${call.notes || 'No notes'}"</p>
+                    </div>
                 </div>
-                <div class="text-xs text-gray-400 text-right">
-                    <p>ID: #${call.id}</p>
-                    <p>Created: ${new Date(call.created_at).toLocaleDateString('en-SG', { timeZone: 'Asia/Singapore' })}</p>
+                <div class="text-right">
+                    <span class="badge ${call.status === 'completed' ? 'badge-success' : 'badge-warning'}">
+                        ${call.status === 'cancelled' ? 'Missed' : call.status}
+                    </span>
+                    <p class="text-[10px] text-slate-400 mt-2 font-bold uppercase">ID: #${call.id}</p>
                 </div>
             </div>
         </div>
@@ -418,7 +482,10 @@ async function startCall(callId, hostUrl) {
         // Update call status to 'active' - this triggers client notification
         await fetch(`${VIDEO_SERVICE}/${callId}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ status: 'active' })
         });
 
@@ -437,7 +504,10 @@ async function answerEmergencyCall(callId, hostUrl) {
         // Mark as active so the client knows help is on the way
         await fetch(`${VIDEO_SERVICE}/${callId}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ status: 'active', staffId: currentUser.id })
         });
         joinCall(hostUrl);
@@ -470,7 +540,9 @@ function closeModal() {
 
 async function loadClients() {
     try {
-        const response = await fetch(`${AUTH_SERVICE}/users?role=client`);
+        const response = await fetch(`${AUTH_SERVICE}/users?role=client`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         const clients = await response.json();
         const select = document.getElementById('selectClient');
 
@@ -494,7 +566,10 @@ async function handleNewCallSubmit(e) {
     try {
         const response = await fetch(`${VIDEO_SERVICE}/checkin`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify(data)
         });
 
@@ -519,7 +594,8 @@ async function deleteCall(callId) {
 
     try {
         const response = await fetch(`${VIDEO_SERVICE}/${callId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {
@@ -568,7 +644,9 @@ function closeEditModal() {
 
 async function loadEditClients(selectedClientId) {
     try {
-        const response = await fetch(`${AUTH_SERVICE}/users?role=client`);
+        const response = await fetch(`${AUTH_SERVICE}/users?role=client`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         const clients = await response.json();
         const select = document.getElementById('editSelectClient');
         select.innerHTML = '<option value="">-- Choose Client --</option>' +
