@@ -4,7 +4,7 @@
  */
 
 // API Base URL - Calendar Service
-const CALENDAR_API = 'http://localhost:5003/api';
+const CALENDAR_API = '/calendar/api';
 
 // Current state
 let currentDate = new Date();
