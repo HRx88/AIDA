@@ -68,6 +68,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('userName').textContent = currentUser.fullName || 'Client';
 
+    // Display profile image in sidebar if available
+    if (currentUser.profileImageUrl) {
+        const avatarContainer = document.querySelector('.user-details')?.previousElementSibling;
+        if (avatarContainer && avatarContainer.classList.contains('bg-slate-200')) {
+            avatarContainer.innerHTML = `<img src="${currentUser.profileImageUrl}" class="w-full h-full object-cover rounded-full">`;
+        }
+    }
+
     loadCalls();
     // Poll for active calls every 10 seconds
     setInterval(checkForActiveCalls, 10000);

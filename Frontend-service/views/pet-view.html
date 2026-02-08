@@ -142,7 +142,15 @@
         const userData = JSON.parse(localStorage.getItem('user'));
         if (userData && userData.fullName) {
             const nameEl = document.getElementById('userName');
-            if (nameEl) nameEl.textContent = userData.fullName.split(' ')[0];
+            if (nameEl) nameEl.textContent = userData.fullName;
+        }
+
+        // Display profile image in sidebar if available
+        if (userData && userData.profileImageUrl) {
+            const avatarContainer = document.querySelector('.user-details')?.previousElementSibling;
+            if (avatarContainer && avatarContainer.classList.contains('bg-slate-200')) {
+                avatarContainer.innerHTML = `<img src="${userData.profileImageUrl}" class="w-full h-full object-cover rounded-full">`;
+            }
         }
 
         async function updateMood() {
