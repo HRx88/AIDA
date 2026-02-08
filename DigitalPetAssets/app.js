@@ -12,7 +12,7 @@ app.use(express.json());
 
 // Routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../Frontend-service/views/pet-page.html'));
+    res.sendFile(path.join(__dirname, '../Frontend-service/views/pet-view.html'));
 });
 
 app.get('/health', (req, res) => {
@@ -27,6 +27,10 @@ app.use('/Happy', express.static(path.join(__dirname, 'Happy')));
 app.use('/Bored', express.static(path.join(__dirname, 'Bored')));
 app.use('/Dirty', express.static(path.join(__dirname, 'Dirty')));
 app.use('/Playing', express.static(path.join(__dirname, 'Playing')));
+
+// Shared Static files from Frontend-service
+app.use('/css', express.static(path.join(__dirname, '../Frontend-service/css')));
+app.use('/js', express.static(path.join(__dirname, '../Frontend-service/js')));
 
 app.listen(PORT, () => {
     console.log(`Pet Service running on http://localhost:${PORT}`);
