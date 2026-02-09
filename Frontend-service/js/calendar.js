@@ -110,7 +110,21 @@ function handleDateChange() {
     updateDateDisplay();
     loadTasks();
     loadPoints(); // Reload points for the new selected date
-    renderFallbackCalendar();
+
+    // Sync fallback calendar month with current date
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    const fallbackMonthValue = fallbackMonth.getMonth();
+    const fallbackYearValue = fallbackMonth.getFullYear();
+
+    // If the selected date is in a different month, update the calendar view
+    if (currentMonth !== fallbackMonthValue || currentYear !== fallbackYearValue) {
+        fallbackMonth = new Date(currentYear, currentMonth, 1);
+        loadMonthTasks(); // Reload tasks for the new month
+    } else {
+        renderFallbackCalendar(); // Just re-render to update the active day highlight
+    }
+
     updateGoogleCalendarView();
 }
 
@@ -277,7 +291,7 @@ function renderTasks(taskList) {
                  data-task-id="${task.id}"
                  title="${task.description || ''}"
                  style="animation-delay: ${index * 0.1}s">
-                <div class="task-checkbox-container" onclick="toggleTask(${task.id}, ${!task.isCompleted})">
+                <div class="task-checkbox-container">
                      <div class="checkbox-custom">
                         ${task.isCompleted ? '✓' : ''}
                      </div>
@@ -293,11 +307,17 @@ function renderTasks(taskList) {
                         <span class="tag">${getCategoryEmoji(task.category)} ${task.category || 'general'}</span>
                     </div>
                 </div>
-                <button class="btn-done" 
-                        onclick="completeTask(${task.id})"
-                        ${task.isCompleted ? 'disabled' : ''}>
-                    ${task.isCompleted ? 'Done' : 'Mark Done'}
-                </button>
+                ${task.isCompleted ? `
+                    <div class="status-badge completed">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Completed</span>
+                    </div>
+                ` : `
+                    <div class="status-badge pending">
+                        <i class="fa-solid fa-clock"></i>
+                        <span>Scheduled</span>
+                    </div>
+                `}
             </div>
         `;
     }).join('');
@@ -444,7 +464,6 @@ async function handleAddTask(e) {
     const timeSlot = document.getElementById('taskTime').value || null;
     const category = document.getElementById('taskCategory').value;
     const description = document.getElementById('taskDescription').value;
-    const isRoutine = document.getElementById('isRoutine').checked;
 
     const dayOfWeek = getLocalDateDay(taskDate);
 
@@ -460,7 +479,7 @@ async function handleAddTask(e) {
                 title,
                 timeSlot,
                 category,
-                isRoutine,
+                isRoutine: false,
                 dayOfWeek,
                 targetDate: taskDate,
                 description

@@ -207,11 +207,11 @@
                         <div class="calendar-header-custom flex justify-between items-center mb-6">
                             <h3 id="calMonthYear" class="text-xl font-bold">Month Year</h3>
                             <div class="flex items-center gap-4">
-                                <button id="googleCalendarBtn"
+                                <!-- <button id="googleCalendarBtn"
                                     class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-[10px] font-bold flex items-center gap-2 hover:bg-blue-100 transition-colors uppercase tracking-wider">
                                     <i class="fa-brands fa-google text-sm"></i>
                                     Connect Google
-                                </button>
+                                </button>-->
                                 <div class="flex gap-2 border-l border-slate-100 pl-4">
                                     <button class="btn-icon" id="calPrevMonth">←</button>
                                     <button class="btn-icon" id="calNextMonth">→</button>
@@ -247,47 +247,33 @@
         <div class="modal-overlay" id="addTaskModal">
             <div class="modal-container">
                 <div class="card glass-card modal-content-anim">
-                    <div
-                        style="display: flex; justify-content: space-between; margin: 1.5rem 1.5rem 0.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-light);">
-                        <h3 style="margin:0;">Add Task</h3>
-                        <button id="closeModal"
-                            style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+                    <div class="modal-header">
+                        <h3>Add Task</h3>
+                        <button id="closeModal" class="btn-close">&times;</button>
                     </div>
                     <div class="modal-content">
                         <form id="addTaskForm">
-                            <div style="margin-bottom: 1rem;">
-                                <label for="taskTitle"
-                                    style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Task
-                                    Name</label>
-                                <input type="text" id="taskTitle" required
-                                    style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                            <div class="mb-4">
+                                <label for="taskTitle">Task Name</label>
+                                <input type="text" id="taskTitle" placeholder="e.g., Morning Walk" required>
                             </div>
-                            <div class="modal-grid-2"
-                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div class="modal-grid-2 mb-4">
                                 <div>
-                                    <label for="taskDate"
-                                        style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Date</label>
-                                    <input type="date" id="taskDate" required
-                                        style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                    <label for="taskDate">Date</label>
+                                    <input type="date" id="taskDate" required>
                                 </div>
                                 <div>
-                                    <label for="taskTime"
-                                        style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Time</label>
-                                    <input type="time" id="taskTime"
-                                        style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                    <label for="taskTime">Time</label>
+                                    <input type="time" id="taskTime">
                                 </div>
                             </div>
-                            <div style="margin-bottom: 1rem;">
-                                <label for="taskDescription"
-                                    style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Description</label>
-                                <textarea id="taskDescription" rows="3" placeholder="Add some details..."
-                                    style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; resize: vertical;"></textarea>
+                            <div class="mb-4">
+                                <label for="taskDescription">Description</label>
+                                <textarea id="taskDescription" rows="3" placeholder="Add some details..."></textarea>
                             </div>
-                            <div style="margin-bottom: 1rem;">
-                                <label for="taskCategory"
-                                    style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Category</label>
-                                <select id="taskCategory"
-                                    style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                            <div class="mb-4">
+                                <label for="taskCategory">Category</label>
+                                <select id="taskCategory">
                                     <option value="General">📌 General</option>
                                     <option value="Breakfast">🍳 Breakfast</option>
                                     <option value="Lunch">🥗 Lunch</option>
@@ -298,34 +284,27 @@
                                     <option value="Social">👥 Social</option>
                                 </select>
                             </div>
-                            <div style="margin-bottom: 2rem;">
-                                <label style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <input type="checkbox" id="isRoutine">
-                                    Make this a weekly routine
-                                </label>
-                            </div>
-                            <div style="display: flex; justify-content: flex-end; gap: 1rem;">
-                                <button type="button" id="cancelTask"
-                                    style="background: transparent; border: none; font-weight: 600; color: var(--text-muted); cursor: pointer;">Cancel</button>
+
+                            <div class="modal-footer">
+                                <button type="button" id="cancelTask" class="btn-cancel">Cancel</button>
                                 <button type="submit" class="btn-primary">Save Task</button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Celebration Animation Container -->
-            <div id="celebration"
-                style="position: fixed; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; transition: opacity 0.3s;">
-                <div style="background: white; padding: 2rem; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.2); transform: scale(0.8); transition: transform 0.3s;"
-                    id="celebrationCard">
-                    <div style="font-size: 5rem;">🎉</div>
-                    <h2 style="color: var(--primary); margin: 1rem 0;">Awesome!</h2>
-                    <p style="font-size: 1.5rem; font-weight: bold; color: var(--warning);">+10 Points</p>
-                </div>
+        <!-- Celebration Animation Container -->
+        <div id="celebration" class="celebration-overlay">
+            <div class="celebration-card" id="celebrationCard">
+                <div class="text-6xl mb-4">🎉</div>
+                <h2 class="text-aida-primary mb-2">Awesome!</h2>
+                <p class="text-2xl font-bold text-amber-500">+10 Points</p>
             </div>
+        </div>
 
-            <script src="/js/calendar.js"></script>
+        <script src="/js/calendar.js"></script>
 </body>
 
 </html>
