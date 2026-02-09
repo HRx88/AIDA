@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Portal | Clients | AIDA</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/css/staff-calls.css">
+
+    <script>
+        // Authentication & Role Guard
+        (function () {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!token || !user) {
+                window.location.href = '/';
+                return;
+            }
+            if (user.role !== 'staff' && user.role !== 'admin') {
+                alert('Access denied. Staff only.');
+                window.location.href = '/client-dashboard.html';
+            }
+        })();
+
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'aida-primary': '#2563eb',
+                        'aida-success': '#059669',
+                        'aida-danger': '#e11d48',
+                    }
+                }
+            }
+        }
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+
+        // Initialize Avatar on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user && user.profileImageUrl) {
+                const fullUrl = user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `/auth${user.profileImageUrl}`;
+
+                // Update sidebar avatar
+                const sidebarAvatarContainer = document.querySelector('.sidebar .bg-slate-200');
+                if (sidebarAvatarContainer) {
+                    sidebarAvatarContainer.innerHTML = `<img src="${fullUrl}" class="w-full h-full object-cover rounded-full">`;
+                }
+
+                // Update mobile header avatar
+                const mobileAvatarContainer = document.querySelector('.mobile-header .bg-slate-900');
+                if (mobileAvatarContainer) {
+                    mobileAvatarContainer.innerHTML = `<img src="${fullUrl}" class="w-full h-full object-cover rounded-lg">`;
+                }
+            }
+        });
+    </script>
+</head>
+
+<body class="bg-slate-50 text-slate-900">
+
+    <div class="app-container">
+        <!-- Mobile Header -->
+        <header class="mobile-header">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
+                    <i class="fa-solid fa-user-shield text-white text-sm"></i>
+                </div>
+                <span class="font-bold">Staff Portal</span>
+            </div>
+            <button onclick="toggleSidebar()" class="menu-toggle">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </header>
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="mb-10 flex items-center space-x-3 px-2">
+                <div class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-user-shield text-white text-xl"></i>
+                </div>
+                <span class="logo-text text-xl font-bold tracking-tight">Staff Portal</span>
+            </div>
+
+            <nav class="flex-1 space-y-1">
+                <a href="/staff-calls.html" class="nav-item">
+                    <i class="fa-solid fa-headset"></i>
+                    <span class="nav-label">Calls</span>
+                </a>
+                <a href="/staff-clients.html" class="nav-item active">
+                    <i class="fa-solid fa-users"></i>
+                    <span class="nav-label">Clients</span>
+                </a>
+                <a href="/staff-settings.html" class="nav-item">
+                    <i class="fa-solid fa-cog"></i>
+                    <span class="nav-label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="mt-auto pt-6 border-t border-slate-100">
+                <div class="flex items-center justify-between px-2 mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-user text-slate-500"></i>
+                        </div>
+                        <div class="user-details">
+                            <p id="staffName" class="text-sm font-bold truncate max-w-[120px]">Staff</p>
+                            <p class="text-xs text-slate-400">Supervisor</p>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900">Client Management</h1>
+                    <p class="text-slate-500 text-sm md:text-base">View and manage all registered clients.</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative w-full sm:w-auto">
+                        <i
+                            class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="clientSearch" placeholder="Filter by name..."
+                            class="pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-base focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-64 lg:w-80 transition-all">
+                    </div>
+                    <button onclick="openCreateModal()" class="btn-primary flex items-center justify-center py-3">
+                        <i class="fa-solid fa-plus mr-2"></i> Create Client
+                    </button>
+                </div>
+            </header>
+
+            <!-- Client Stat Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="card p-6 flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                        <i class="fa-solid fa-users text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Clients</p>
+                        <h3 id="totalClients" class="text-2xl font-black">0</h3>
+                    </div>
+                </div>
+                <div class="card p-6 flex items-center space-x-4 border-emerald-100 bg-emerald-50/20">
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+                        <i class="fa-solid fa-heart-pulse text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Active & Safe</p>
+                        <h3 id="activeClients" class="text-2xl font-black text-emerald-600">0</h3>
+                    </div>
+                </div>
+                <div class="card p-6 flex items-center space-x-4 border-rose-100 bg-rose-50/20">
+                    <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center">
+                        <i class="fa-solid fa-bell text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Pending SOS</p>
+                        <h3 id="pendingSos" class="text-2xl font-black text-rose-600">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-0 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Client
+                                    Info</th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Username
+                                </th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Email
+                                </th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status
+                                </th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Points
+                                </th>
+                                <th
+                                    class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientTableBody" class="divide-y divide-slate-100">
+                            <!-- JS Populated -->
+                            <tr>
+                                <td colspan="5" class="px-6 py-12 text-center text-slate-400">
+                                    <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i>
+                                    <p>Loading clients...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Client Detail Modal -->
+    <div id="clientModal" class="hidden modal-overlay">
+        <div class="modal-content animate-in max-w-2xl">
+            <div class="flex justify-between items-start mb-6">
+                <div class="flex items-center space-x-4">
+                    <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
+                        <i class="fa-solid fa-user text-3xl text-slate-400"></i>
+                    </div>
+                    <div>
+                        <h2 id="modalClientName" class="text-3xl font-black">Client Name</h2>
+                        <span id="modalClientBadge" class="badge">Safe</span>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6 mb-8">
+                <div class="space-y-4">
+                    <div>
+                        <label
+                            class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Username</label>
+                        <p id="modalClientUsername" class="font-bold text-slate-900">-</p>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">User
+                            ID</label>
+                        <p id="modalClientId" class="font-mono text-slate-500 text-sm">-</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Total
+                            Points</label>
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-star text-amber-400 text-sm"></i>
+                            <p id="modalClientPoints" class="font-bold text-slate-900">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-6 border-t border-slate-100">
+                <button onclick="scheduleCallForClient()" class="btn-primary flex-1 flex items-center justify-center">
+                    <i class="fa-solid fa-headset mr-2"></i> Schedule Call
+                </button>
+                <button onclick="closeModal()" class="btn-secondary flex-1">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Client Modal -->
+    <div id="editModal" class="hidden modal-overlay">
+        <div class="modal-content animate-in max-w-lg">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-2xl font-black">Edit Client Details</h2>
+                    <p class="text-slate-500 text-sm">Update profile information for this client.</p>
+                </div>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="editClientForm" class="space-y-6">
+                <input type="hidden" id="editClientId">
+
+                <!-- Profile Image Section -->
+                <div class="flex flex-col items-center pb-6 border-b border-slate-100">
+                    <div class="relative group mb-3">
+                        <div
+                            class="w-20 h-20 bg-slate-100 rounded-2xl overflow-hidden border-4 border-white shadow-md flex items-center justify-center">
+                            <img id="editClientPreview" src="" alt="Profile" class="w-full h-full object-cover hidden">
+                            <i id="editClientPlaceholder" class="fa-solid fa-user text-slate-300 text-3xl"></i>
+                        </div>
+                        <label for="editClientAvatar"
+                            class="absolute -bottom-1 -right-1 bg-slate-900 text-white w-7 h-7 rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-all">
+                            <i class="fa-solid fa-camera text-xs"></i>
+                        </label>
+                        <input type="file" id="editClientAvatar" class="hidden"
+                            accept="image/jpeg,image/png,image/webp">
+                    </div>
+                    <p class="text-xs text-slate-400">Click camera to change photo</p>
+                    <div id="editAvatarStatus" class="mt-2 text-xs font-medium hidden"></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label
+                            class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Username</label>
+                        <input type="text" id="editClientUsername" required placeholder="johndoe123">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Full
+                            Name</label>
+                        <input type="text" id="editClientFullName" required placeholder="John Doe">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Email
+                        (Optional)</label>
+                    <input type="email" id="editClientEmail" placeholder="client@example.com">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">New Password
+                        (Optional)</label>
+                    <input type="password" id="editClientPassword" placeholder="Leave blank to keep current">
+                </div>
+
+                <div class="flex gap-3 pt-6 border-t border-slate-100">
+                    <button type="submit" class="btn-primary flex-1">Save Changes</button>
+                    <button type="button" onclick="closeEditModal()" class="btn-secondary flex-1">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div id="createModal" class="hidden modal-overlay">
+        <div class="modal-content animate-in max-w-lg">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-2xl font-black">Register New Client</h2>
+                    <p class="text-slate-500 text-sm">Create a new account for a client.</p>
+                </div>
+                <button onclick="closeCreateModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="createClientForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label
+                            class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Username</label>
+                        <input type="text" id="createClientUsername" required placeholder="johndoe123">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Full
+                            Name</label>
+                        <input type="text" id="createClientFullName" required placeholder="John Doe">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Email
+                        (Optional)</label>
+                    <input type="email" id="createClientEmail" placeholder="client@example.com">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Initial
+                        Password</label>
+                    <input type="password" id="createClientPassword" required placeholder="••••••••">
+                </div>
+
+                <div class="flex gap-3 pt-6 border-t border-slate-100">
+                    <button type="submit" class="btn-primary flex-1">Create Account</button>
+                    <button type="button" onclick="closeCreateModal()" class="btn-secondary flex-1">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script src="/js/staff-clients.js"></script>
+</body>
+
+</html>

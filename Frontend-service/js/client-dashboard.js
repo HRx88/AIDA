@@ -1,5 +1,5 @@
 // Client Dashboard JavaScript
-const VIDEO_SERVICE = 'http://localhost:5002/api/calls';
+const VIDEO_SERVICE = '/calls/api/calls';
 
 const token = localStorage.getItem('token');
 const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -67,6 +67,17 @@ document.addEventListener('DOMContentLoaded', () => {
     callingSound = document.getElementById('callingSound');
 
     document.getElementById('userName').textContent = currentUser.fullName || 'Client';
+
+    // Display profile image in sidebar if available
+    if (currentUser.profileImageUrl) {
+        const avatarContainer = document.querySelector('.user-details')?.previousElementSibling;
+        if (avatarContainer && avatarContainer.classList.contains('bg-slate-200')) {
+            const fullUrl = currentUser.profileImageUrl.startsWith('http')
+                ? currentUser.profileImageUrl
+                : `/auth${currentUser.profileImageUrl}`;
+            avatarContainer.innerHTML = `<img src="${fullUrl}" class="w-full h-full object-cover rounded-full">`;
+        }
+    }
 
     loadCalls();
     // Poll for active calls every 10 seconds
@@ -205,7 +216,10 @@ async function markCallAsMissed(callId) {
     try {
         await fetch(`${VIDEO_SERVICE}/${callId}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ status: 'cancelled', notes: 'Call not answered after 3 attempts' })
         });
         // Hide notification modal if showing
