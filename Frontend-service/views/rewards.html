@@ -1,88 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AIDA Rewards</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Authentication Guard
+    (function () {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!token || !user) {
+        window.location.href = '/';
+      }
+    })();
+
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'aida-primary': '#2563eb',
+            'aida-success': '#059669',
+            'aida-danger': '#e11d48',
+          }
+        }
+      }
+    }
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="/css/client-dashboard.css">
 </head>
 
 <body class="bg-slate-50 text-slate-800">
-  <div class="max-w-6xl mx-auto p-6">
-    <!-- Header -->
-    <div class="flex items-center justify-between gap-4 flex-wrap">
-      <div>
-        <h1 class="text-3xl font-bold">Rewards</h1>
-        <p class="text-slate-600">Redeem your points for items, vouchers, or deliveries.</p>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="mb-10 flex items-center space-x-3 px-2">
+        <div class="w-10 h-10 bg-aida-primary rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+          <i class="fa-solid fa-shield-heart text-white text-xl"></i>
+        </div>
+        <span class="logo-text text-xl font-bold tracking-tight">AIDA</span>
       </div>
 
-      <div class="flex items-center gap-3">
-        <a href="/client-dashboard.html"
-          class="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100">
-          <i class="fa-solid fa-arrow-left mr-2"></i>Back
+      <nav class="flex-1 space-y-1">
+        <a href="/client-dashboard.html" class="nav-item">
+          <i class="fa-solid fa-home"></i>
+          <span class="nav-label">Home</span>
         </a>
-        <button id="logoutBtn"
-          class="px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800">
-          <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
-        </button>
-      </div>
-    </div>
+        <a href="/calendar-dashboard.html" class="nav-item">
+          <i class="fa-solid fa-calendar"></i>
+          <span class="nav-label">Calendar</span>
+        </a>
+        <a href="/pet-view.html" class="nav-item">
+          <i class="fa-solid fa-paw"></i>
+          <span class="nav-label">My Pet</span>
+        </a>
+        <a href="#" class="nav-item active">
+          <i class="fa-solid fa-gift"></i>
+          <span class="nav-label">Rewards</span>
+        </a>
+      </nav>
 
-    <!-- Points + Refresh -->
-    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm md:col-span-2">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-slate-500">Your Points</p>
-            <p class="text-4xl font-extrabold mt-1" id="pointsBalance">—</p>
+      <div class="mt-auto pt-6 border-t border-slate-100">
+        <div class="flex items-center justify-between px-2 mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
+              <i class="fa-solid fa-user text-slate-500"></i>
+            </div>
+            <div class="user-details">
+              <p id="sidebarUserName" class="text-sm font-bold">User</p>
+              <p class="text-xs text-slate-400">Basic Member</p>
+            </div>
           </div>
-          <button id="refreshBtn"
-            class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
-            <i class="fa-solid fa-rotate mr-2"></i>Refresh
+          <button id="sidebarLogoutBtn" class="text-slate-400 hover:text-red-500 transition-colors">
+            <i class="fa-solid fa-right-from-bracket"></i>
           </button>
         </div>
-        <p class="text-slate-500 mt-3 text-sm">
-          Points balance is calculated from <span class="font-semibold">user_points</span> (including redemptions as negative entries).
-        </p>
       </div>
+    </aside>
 
-      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-        <p class="text-slate-500">Quick Tips</p>
-        <ul class="mt-2 text-sm text-slate-700 space-y-1">
-          <li>• Stock can run out fast.</li>
-          <li>• Delivery needs address fields.</li>
-          <li>• Voucher redemption returns a code.</li>
-        </ul>
-      </div>
-    </div>
+    <!-- Mobile Bottom Nav -->
+    <nav class="mobile-nav">
+      <a href="/client-dashboard.html" class="text-slate-400 flex flex-col items-center">
+        <i class="fa-solid fa-home text-xl"></i>
+        <span class="text-[10px] font-bold mt-1">Home</span>
+      </a>
+      <a href="/calendar-dashboard.html" class="text-slate-400 flex flex-col items-center">
+        <i class="fa-solid fa-calendar text-xl"></i>
+        <span class="text-[10px] font-bold mt-1">Calendar</span>
+      </a>
+      <a href="/pet-view.html" class="text-slate-400 flex flex-col items-center">
+        <i class="fa-solid fa-paw text-xl"></i>
+        <span class="text-[10px] font-bold mt-1">My Pet</span>
+      </a>
+      <a href="#" class="text-blue-600 flex flex-col items-center">
+        <i class="fa-solid fa-gift text-xl"></i>
+        <span class="text-[10px] font-bold mt-1">Rewards</span>
+      </a>
+    </nav>
 
-    <!-- Rewards List -->
-    <div class="mt-8">
-      <div class="flex items-end justify-between gap-4 flex-wrap">
-        <h2 class="text-2xl font-bold">Rewards Catalogue</h2>
-        <input id="searchInput" placeholder="Search rewards..." autocomplete="off"
-          class="w-full md:w-72 px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-200" />
-      </div>
-
-      <div id="rewardsGrid" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-      <p id="rewardsEmpty" class="hidden mt-4 text-slate-500">No rewards found.</p>
-    </div>
-
-    <!-- History -->
-    <div class="mt-10">
+    <main class="main-content">
+      <!-- Header -->
       <div class="flex items-center justify-between gap-4 flex-wrap">
-        <h2 class="text-2xl font-bold">My Redemptions</h2>
-        <button id="loadHistoryBtn"
-          class="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100">
-          <i class="fa-solid fa-clock-rotate-left mr-2"></i>Load History
-        </button>
+        <div>
+          <h1 class="text-3xl font-bold">Rewards</h1>
+          <p class="text-slate-600">Redeem your points for items, vouchers, or deliveries.</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button id="logoutBtn" class="px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800">
+            <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
+          </button>
+        </div>
       </div>
 
-      <div id="historyList" class="mt-4 space-y-3"></div>
-      <p id="historyEmpty" class="hidden mt-4 text-slate-500">No redemptions yet.</p>
-    </div>
+      <!-- Points + Refresh -->
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm md:col-span-2">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-slate-500">Your Points</p>
+              <p class="text-4xl font-extrabold mt-1" id="pointsBalance">—</p>
+            </div>
+            <button id="refreshBtn" class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
+              <i class="fa-solid fa-rotate mr-2"></i>Refresh
+            </button>
+          </div>
+          <p class="text-slate-500 mt-3 text-sm">
+            Points balance is calculated from <span class="font-semibold">user_points</span> (including redemptions as
+            negative entries).
+          </p>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <p class="text-slate-500">Quick Tips</p>
+          <ul class="mt-2 text-sm text-slate-700 space-y-1">
+            <li>• Stock can run out fast.</li>
+            <li>• Delivery needs address fields.</li>
+            <li>• Voucher redemption returns a code.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Rewards List -->
+      <div class="mt-8">
+        <div class="flex items-end justify-between gap-4 flex-wrap">
+          <h2 class="text-2xl font-bold">Rewards Catalogue</h2>
+          <input id="searchInput" placeholder="Search rewards..." autocomplete="off"
+            class="w-full md:w-72 px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-200" />
+        </div>
+
+        <div id="rewardsGrid" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        <p id="rewardsEmpty" class="hidden mt-4 text-slate-500">No rewards found.</p>
+      </div>
+
+      <!-- History -->
+      <div class="mt-10">
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+          <h2 class="text-2xl font-bold">My Redemptions</h2>
+          <button id="loadHistoryBtn" class="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100">
+            <i class="fa-solid fa-clock-rotate-left mr-2"></i>Load History
+          </button>
+        </div>
+
+        <div id="historyList" class="mt-4 space-y-3"></div>
+        <p id="historyEmpty" class="hidden mt-4 text-slate-500">No redemptions yet.</p>
+      </div>
   </div>
 
   <!-- Redeem Modal -->
@@ -157,10 +242,14 @@
     </div>
   </div>
 
+  </main>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="hidden fixed top-5 right-5 z-[9999] px-5 py-3 rounded-2xl text-white shadow-xl"></div>
 
   <!-- Make sure this path matches your folder structure -->
-  <script defer src="../js/rewards.js"></script>
+  <script src="/js/rewards.js"></script>
 </body>
+
 </html>

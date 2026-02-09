@@ -1,7 +1,9 @@
 // Reward-service/config/db.js
 const { Pool } = require("pg");
+const path = require("path");
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
-// Helper: fail fast if env is missing (prevents "it connects to localhost" confusion)
+// Helper: fail fast if env is missing
 function requireEnv(name) {
   const v = process.env[name];
   if (!v || String(v).trim() === "") {
@@ -18,9 +20,7 @@ const pool = new Pool({
   database: requireEnv("SUPABASE_DB"),
   user: requireEnv("SUPABASE_USER"),
   password: requireEnv("SUPABASE_PASS"),
-  // Supabase pooler commonly uses 6543. You can override with SUPABASE_PORT in .env.
-  port: Number(process.env.SUPABASE_PORT || 6543),
-  // Supabase requires SSL
+  port: Number(process.env.SUPABASE_PORT || 5432),
   ssl: { rejectUnauthorized: false },
 });
 

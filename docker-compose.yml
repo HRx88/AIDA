@@ -68,6 +68,24 @@ services:
       timeout: 5s
       retries: 10
 
+  reward-service:
+    build:
+      context: ./Reward-service
+      dockerfile: Dockerfile
+    ports:
+      - "5007:5007"
+    env_file:
+      - ./.env
+    environment:
+      - REWARD_SERVICE_PORT=5007
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:5007/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   frontend-service:
     build:
       context: ./Frontend-service
@@ -82,6 +100,7 @@ services:
       - AUTH_SERVICE_URL=http://auth-service:5006
       - VIDEO_SERVICE_URL=http://video-call-service:5002
       - PET_SERVICE_URL=http://pet-service:5004
+      - REWARD_SERVICE_URL=http://reward-service:5007
     depends_on:
       calendar-service:
         condition: service_healthy
@@ -90,5 +109,7 @@ services:
       video-call-service:
         condition: service_healthy
       pet-service:
+        condition: service_healthy
+      reward-service:
         condition: service_healthy
     restart: unless-stopped
