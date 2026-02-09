@@ -4,7 +4,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
-const PORT = process.env.AUTH_SERVICE_PORT || 5001;
+const PORT = process.env.AUTH_SERVICE_PORT || 5006;
 
 // Middleware
 app.use(cors());
@@ -28,6 +28,12 @@ app.get('/health', (req, res) => {
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Auth Service running on http://0.0.0.0:${PORT}`);
+    console.log('[AUTH] Available routes:');
+    authRoutes.stack.forEach(r => {
+        if (r.route) {
+            console.log(`  ${Object.keys(r.route.methods).join(',').toUpperCase()} http://localhost:${PORT}/api/auth${r.route.path}`);
+        }
+    });
 });
 
 module.exports = app;

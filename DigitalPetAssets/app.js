@@ -1,9 +1,9 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const { authenticateJWT } = require('./middleware/authMiddleware');
 const petController = require('./controllers/petController');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
 const PORT = process.env.PET_SERVICE_PORT || 5004;
