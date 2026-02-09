@@ -41,8 +41,8 @@ app.get('/health', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Calendar Service running on http://localhost:${PORT}`);
-});
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Calendar Service running on http://0.0.0.0:${PORT}`);
+}); // in Docker, if you bind only to localhost, other containers can’t reach it.
 
 module.exports = app;

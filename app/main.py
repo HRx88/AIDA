@@ -1,6 +1,9 @@
 # app/main.py
 from flask import Flask, jsonify, request, render_template
 from threading import Thread, Lock
+import os
+import requests
+from flask import Response
 
 from voice.STT import calibrate_microphone, listen_once
 from voice.TTS import speak
@@ -9,6 +12,43 @@ from ai.intents import INTENT_KEYWORDS
 
 #testPush
 app = Flask(__name__, template_folder="../ui/screens", static_folder="../ui/static")
+CALENDAR_BASE_URL = os.getenv("CALENDAR_BASE_URL", "http://localhost:5003")
+
+
+@app.route("/calendar/api/<path:path>", methods=["GET","POST","PUT","PATCH","DELETE","OPTIONS"])
+def proxy_calendar(path):
+    url = f"{CALENDAR_BASE_URL}/api/{path}"
+
+    # Forward headers except Host (and Content-Length, requests will set it)
+    headers = {k: v for k, v in request.headers if k.lower() not in ("host", "content-length")}
+
+    # Choose how to forward the body
+    body = None
+    json_body = None
+    if request.method in ("POST", "PUT", "PATCH"):
+        if request.is_json:
+            json_body = request.get_json(silent=True)
+        else:
+            body = request.get_data()  # raw body (form-data/text/etc.)
+
+    payload_json = request.get_json(silent=True) if request.is_json else None
+    payload_data = request.get_data() if not request.is_json else None
+
+    resp = requests.request(
+        method=request.method,
+        url=url,
+        params=request.args,
+        json=payload_json,
+        data=payload_data,
+        headers=headers,
+        cookies=request.cookies,
+        timeout=20,
+    )
+
+    excluded = {"content-encoding", "content-length", "transfer-encoding", "connection"}
+    out_headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in excluded]
+    return Response(resp.content, resp.status_code, out_headers)
+
 
 # Create ONE AI brain instance (keeps conversation history)
 #brain = AIResponder(current_task="Brush teeth")

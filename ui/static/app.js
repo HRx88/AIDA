@@ -1,8 +1,9 @@
 
 
 // ===== Calendar-service API base =====
-// TODO (later): proxy calendar calls through Flask instead of calling 5003 directly
-const CALENDAR_API_BASE = `http://${window.location.hostname}:5003`;
+// Call calendar THROUGH Flask proxy (same origin). Works in Docker + local.
+const CALENDAR_API_BASE = "/calendar"; // keep empty so we can use relative URLs
+const CALENDAR_API = "/calendar/api"; // proxy route in Flask
 
 let nudgeTimer = null;
 let lastUserSpokeAt = 0;
@@ -94,7 +95,7 @@ function formatTimeHHMM(dateObj) {
 // ===== API Calls =====
 async function fetchTodayStatus(userId, dateStr) {
   // This hits calendar-service taskLogController.getTodayStatus
-  const url = `${CALENDAR_API_BASE}/api/logs/today/${userId}?date=${encodeURIComponent(dateStr)}`;
+  const url = `${CALENDAR_API}/logs/today/${userId}?date=${encodeURIComponent(dateStr)}`;
   const res = await fetch(url);
   if (!res.ok) {
     const text = await res.text();
@@ -632,7 +633,7 @@ async function completeCurrentTask() {
   const taskId = Number(sessionStorage.getItem("currentTaskId"));
   if (!taskId) throw new Error("No currentTaskId in sessionStorage");
 
-  const res = await fetch(`${CALENDAR_API_BASE}/api/logs/complete`, {
+  const res = await fetch(`${CALENDAR_API}/logs/complete`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
