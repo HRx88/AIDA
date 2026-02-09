@@ -423,6 +423,8 @@ h4 {
     max-height: 100%;
     padding: 0;
     overflow: hidden;
+    align-items: center;
+    justify-content: space-evenly;
 }
 
 .modal-content {
@@ -431,6 +433,8 @@ h4 {
     min-height: 0;
     padding: 1.5rem;
     scrollbar-width: thin;
+    text-align: left;
+    width: 100%;
 }
 
 .modal-content::-webkit-scrollbar {
@@ -440,6 +444,57 @@ h4 {
 .modal-content::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 10px;
+}
+
+/* Modal Form Styling */
+.modal-content form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-main);
+    text-align: left;
+}
+
+.modal-content form input[type="text"],
+.modal-content form input[type="date"],
+.modal-content form input[type="time"],
+.modal-content form textarea,
+.modal-content form select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #f8fafc;
+    transition: all 0.2s;
+    color: var(--text-main);
+}
+
+.modal-content form input:focus,
+.modal-content form textarea:focus,
+.modal-content form select:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.modal-content form input::placeholder,
+.modal-content form textarea::placeholder {
+    color: #94a3b8;
+}
+
+.modal-content form .modal-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 500px) {
+    .modal-content form .modal-grid-2 {
+        grid-template-columns: 1fr;
+    }
 }
 
 @keyframes pop {
@@ -707,4 +762,143 @@ h4 {
 
 .modal-grid-2 {
     grid-template-columns: 1fr !important;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.btn-close:hover {
+    color: var(--danger);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 0 1.5rem 1.5rem;
+    margin-top: 1rem;
+    width: 100%;
+}
+
+.btn-cancel {
+    background: transparent;
+    border: none;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.75rem 1.5rem;
+    transition: color 0.2s;
+}
+
+.btn-cancel:hover {
+    color: var(--text-main);
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    cursor: pointer;
+}
+
+.checkbox-container input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+}
+
+/* Celebration Overlay */
+.celebration-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.celebration-overlay.active {
+    opacity: 1;
+}
+
+.celebration-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    transform: scale(0.8);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid var(--border-light);
+}
+
+.celebration-overlay.active .celebration-card {
+    transform: scale(1);
+}
+
+/* Status Badges */
+.status-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    min-width: 100px;
+    gap: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.status-badge i {
+    font-size: 1.25rem;
+}
+
+.status-badge.completed {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.status-badge.pending {
+    background: #f8fafc;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.task-card.completed {
+    background-color: #f8fafc;
+    opacity: 0.8;
+}
+
+.task-checkbox-container {
+    cursor: default !important;
 }
