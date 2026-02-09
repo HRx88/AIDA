@@ -53,7 +53,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const user = JSON.parse(localStorage.getItem('user'));
             if (user && user.profileImageUrl) {
-                const fullUrl = user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `http://localhost:5001${user.profileImageUrl}`;
+                const fullUrl = user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `/auth${user.profileImageUrl}`;
 
                 // Update sidebar avatar
                 const sidebarAvatarContainer = document.querySelector('.sidebar .bg-slate-200');
@@ -115,7 +115,7 @@
                 <div class="flex items-center justify-between px-2 mb-4">
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
-                            <i class="fa-solid fa-user-nurse text-slate-500"></i>
+                            <i class="fa-solid fa-user text-slate-500"></i>
                         </div>
                         <div class="user-details">
                             <p id="staffName" class="text-sm font-bold truncate max-w-[120px]">Staff</p>

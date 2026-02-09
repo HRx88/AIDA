@@ -1,5 +1,5 @@
 // Staff Settings JavaScript
-const AUTH_SERVICE = 'http://localhost:5001/api/auth';
+const AUTH_SERVICE = '/auth/api/auth';
 
 const token = localStorage.getItem('token');
 const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -50,7 +50,7 @@ function updateAvatarUI(url) {
 
     if (url) {
         // If it's a Supabase URL or absolute URL, use it directly
-        const fullUrl = url.startsWith('http') ? url : `http://localhost:5001${url}`;
+        const fullUrl = url.startsWith('http') ? url : `/auth${url}`;
 
         preview.src = fullUrl;
         preview.classList.remove('hidden');

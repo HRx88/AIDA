@@ -1,4 +1,4 @@
-const db = require('../../DBconfig.js'); // Path to your root DB config
+const db = require('../config/db'); // Use local config
 
 // Define the function as 'async' so you can use 'await' inside it
 const getPetMood = async (req, res) => {

@@ -15,7 +15,29 @@
     <link rel="stylesheet" href="/css/happy.css">
     <link rel="stylesheet" href="/css/pet-view.css">
 
-    <script src="/js/pet-view.js" defer></script>
+    <script>
+        // Authentication Guard
+        (function () {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            if (!token || !user) {
+                window.location.href = '/';
+            }
+
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            'aida-primary': '#2563eb',
+                            'aida-success': '#059669',
+                            'aida-danger': '#e11d48',
+                        }
+                    }
+                }
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="/css/pet-view.css">
 </head>
 
 <body class="bg-slate-50 text-slate-900">
@@ -40,7 +62,6 @@
                     <i class="fa-solid fa-calendar"></i>
                     <span class="nav-label">Calendar</span>
                 </a>
-                <!-- Added Pet link as active for context -->
                 <a href="#" class="nav-item active">
                     <i class="fa-solid fa-paw"></i>
                     <span class="nav-label">My Pet</span>
@@ -97,6 +118,7 @@
         </main>
     </div>
 
+    <script src="/js/pet-view.js"></script>
 </body>
 
 </html>

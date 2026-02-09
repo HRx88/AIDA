@@ -16,6 +16,58 @@ services:
       timeout: 5s
       retries: 10
 
+  auth-service:
+    build:
+      context: ./Auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "5005:5006"
+    env_file:
+      - ./.env
+    environment:
+      - AUTH_SERVICE_PORT=5006
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:5006/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  video-call-service:
+    build:
+      context: ./Video-call-service
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5002"
+    env_file:
+      - ./.env
+    environment:
+      - VIDEO_SERVICE_PORT=5002
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:5002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  pet-service:
+    build:
+      context: ./DigitalPetAssets
+      dockerfile: Dockerfile
+    ports:
+      - "5004:5004"
+    env_file:
+      - ./.env
+    environment:
+      - PET_SERVICE_PORT=5004
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:5004/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   frontend-service:
     build:
       context: ./Frontend-service
@@ -27,7 +79,16 @@ services:
     environment:
       - FRONTEND_PORT=5001
       - CALENDAR_BASE_URL=http://calendar-service:5003
+      - AUTH_SERVICE_URL=http://auth-service:5006
+      - VIDEO_SERVICE_URL=http://video-call-service:5002
+      - PET_SERVICE_URL=http://pet-service:5004
     depends_on:
       calendar-service:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      video-call-service:
+        condition: service_healthy
+      pet-service:
         condition: service_healthy
     restart: unless-stopped

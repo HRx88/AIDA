@@ -1,11 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const { authenticateJWT } = require('./middleware/authMiddleware');
 const petController = require('./controllers/petController');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
-const PORT = process.env.PET_SERVICE_PORT || 5005;
+const PORT = process.env.PET_SERVICE_PORT || 5004;
 
 app.use(cors());
 app.use(express.json());
@@ -19,7 +20,7 @@ app.get('/health', (req, res) => {
     res.json({ service: 'Pet-Asset-Service', status: 'running', port: PORT });
 });
 
-app.get('/api/pet/mood', petController.getPetMood);
+app.get('/api/pet/mood', authenticateJWT, petController.getPetMood);
 
 // Static files (Images, CSS, etc.)
 app.use(express.static(__dirname));
@@ -32,6 +33,6 @@ app.use('/Playing', express.static(path.join(__dirname, 'Playing')));
 app.use('/css', express.static(path.join(__dirname, '../Frontend-service/css')));
 app.use('/js', express.static(path.join(__dirname, '../Frontend-service/js')));
 
-app.listen(PORT, () => {
-    console.log(`Pet Service running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Pet Service running on http://0.0.0.0:${PORT}`);
 });

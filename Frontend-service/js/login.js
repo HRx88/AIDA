@@ -1,7 +1,7 @@
 // Frontend-service/js/login.js
 // Calls Auth-service microservice for authentication
 
-const AUTH_SERVICE_URL = 'http://localhost:5001/api/auth';
+const AUTH_SERVICE_URL = '/auth/api/auth';
 
 // Toast notification system
 function showToast(message, type = 'info') {
