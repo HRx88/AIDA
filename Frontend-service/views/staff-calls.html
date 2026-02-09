@@ -4,492 +4,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Video Calls - AIDA</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Staff Portal | AIDA Personal Safety</title>
+
+    <!-- Fonts & Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .emergency-card {
-            animation: pulse 2s infinite;
-            border: 3px solid #ef4444 !important;
-        }
+    <script src="https://cdn.tailwindcss.com"></script>
 
-        @keyframes pulse {
-
-            0%,
-            100% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
-            }
-
-            50% {
-                box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
-            }
-        }
-
-        /* MS Teams style incoming call modal */
-        .incoming-call-modal {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        }
-
-        .caller-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: avatarPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes avatarPulse {
-
-            0%,
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
-            }
-
-            50% {
-                transform: scale(1.05);
-                box-shadow: 0 0 0 20px rgba(102, 126, 234, 0);
-            }
-        }
-
-        .answer-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            animation: ringPulse 1s ease-in-out infinite;
-        }
-
-        @keyframes ringPulse {
-
-            0%,
-            100% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.1);
-            }
-        }
-
-        .decline-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-        }
-
-        .wave-animation {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            animation: wave 2s ease-out infinite;
-        }
-
-        @keyframes wave {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-
-            100% {
-                transform: scale(2);
-                opacity: 0;
-            }
-        }
-    </style>
-</head>
-
-<body class="bg-gray-100 min-h-screen">
-
-    <nav class="bg-slate-800 text-white p-4 shadow-lg">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold"><i class="fa-solid fa-video mr-2"></i> Video Call Dashboard</h1>
-            <div class="flex items-center space-x-4">
-                <span id="staffName" class="text-slate-300">Staff Member</span>
-                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm">
-                    <i class="fa-solid fa-sign-out-alt"></i> Logout
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container mx-auto p-6">
-
-        <!-- Emergency Alerts Section -->
-        <div id="emergencySection" class="mb-8 hidden">
-            <h2 class="text-2xl font-bold text-red-600 mb-4">
-                <i class="fa-solid fa-exclamation-triangle"></i> Emergency Calls
-            </h2>
-            <div id="emergencyList" class="grid gap-4"></div>
-        </div>
-
-        <!-- Scheduled Calls Section -->
-        <div class="mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-slate-700">
-                    <i class="fa-solid fa-calendar-check"></i> Scheduled Check-Ins
-                </h2>
-                <button onclick="openNewCallModal()"
-                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
-                    <i class="fa-solid fa-plus"></i> Schedule New Call
-                </button>
-            </div>
-            <div id="scheduledList" class="grid gap-4"></div>
-        </div>
-
-        <!-- Past Calls Section -->
-        <div>
-            <h2 class="text-2xl font-bold text-slate-700 mb-4">
-                <i class="fa-solid fa-history"></i> Call History
-            </h2>
-            <div id="historyList" class="grid gap-4"></div>
-        </div>
-    </div>
-
-    <!-- MS Teams Style Incoming Call Modal -->
-    <div id="incomingCallModal" class="fixed inset-0 incoming-call-modal hidden flex items-center justify-center z-50">
-        <div class="text-center text-white">
-            <!-- Caller Avatar -->
-            <div class="relative inline-block mb-6">
-                <div class="wave-animation"></div>
-                <div class="wave-animation" style="animation-delay: 0.5s"></div>
-                <div class="wave-animation" style="animation-delay: 1s"></div>
-                <div class="caller-avatar relative z-10">
-                    <i class="fa-solid fa-user text-5xl text-white"></i>
-                </div>
-            </div>
-
-            <!-- Caller Info -->
-            <h2 id="callerName" class="text-3xl font-bold mb-2">Client Name</h2>
-            <p id="callType" class="text-xl text-red-400 mb-2">
-                <i class="fa-solid fa-exclamation-circle"></i> Emergency Call
-            </p>
-            <p id="callReason" class="text-gray-400 mb-8">Reason: Need assistance</p>
-
-            <!-- Answer/Decline Buttons -->
-            <div class="flex justify-center space-x-12">
-                <button onclick="declineIncomingCall()"
-                    class="decline-btn bg-red-600 hover:bg-red-700 flex items-center justify-center shadow-lg">
-                    <i class="fa-solid fa-phone-slash text-2xl"></i>
-                </button>
-                <button onclick="answerIncomingCall()"
-                    class="answer-btn bg-green-500 hover:bg-green-600 flex items-center justify-center shadow-lg">
-                    <i class="fa-solid fa-phone text-2xl"></i>
-                </button>
-            </div>
-
-            <div class="mt-8 flex justify-center space-x-6 text-sm text-gray-400">
-                <span><i class="fa-solid fa-phone-slash mr-1"></i> Decline</span>
-                <span><i class="fa-solid fa-phone mr-1"></i> Answer</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- New Call Modal -->
-    <div id="newCallModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-            <h3 class="text-2xl font-bold mb-6">Schedule Check-In Call</h3>
-            <form id="newCallForm">
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-semibold mb-2">Select Client</label>
-                    <select id="selectClient" class="w-full p-3 border rounded-lg" required>
-                        <option value="">-- Choose Client --</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-semibold mb-2">Schedule Time</label>
-                    <input type="datetime-local" id="scheduleTime" class="w-full p-3 border rounded-lg" required>
-                </div>
-                <div class="mb-6">
-                    <label class="block text-gray-700 font-semibold mb-2">Notes</label>
-                    <textarea id="callNotes" class="w-full p-3 border rounded-lg" rows="3"
-                        placeholder="Purpose of call..."></textarea>
-                </div>
-                <div class="flex space-x-4">
-                    <button type="button" onclick="closeModal()"
-                        class="flex-1 bg-gray-300 hover:bg-gray-400 py-3 rounded-lg font-semibold">Cancel</button>
-                    <button type="submit"
-                        class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold">
-                        <i class="fa-solid fa-calendar-plus"></i> Schedule
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Whereby Embed Modal -->
-    <div id="callModal" class="fixed inset-0 bg-black hidden flex items-center justify-center z-50">
-        <div class="w-full h-full relative">
-            <button onclick="closeCallModal()"
-                class="absolute top-4 right-4 z-10 bg-red-600 text-white px-4 py-2 rounded-lg">
-                <i class="fa-solid fa-times"></i> End Call
-            </button>
-            <iframe id="wherebyFrame" src="" allow="camera; microphone; fullscreen; display-capture"
-                class="w-full h-full"></iframe>
-        </div>
-    </div>
-
-    <!-- Ringtone Audio (MS Teams style) -->
-    <audio id="ringtone" loop>
-        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
-    </audio>
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/css/staff-calls.css">
 
     <script>
-        // Microservice API endpoints
-        const VIDEO_SERVICE = 'http://localhost:5002/api/calls';
-        const AUTH_SERVICE = 'http://localhost:5001/api/auth';
-
-        let currentUser = JSON.parse(localStorage.getItem('user')) || { id: 1, fullName: 'Staff Member' };
-        let previousEmergencyCount = 0;
-        let currentIncomingCall = null;
-        let ringtone = document.getElementById('ringtone');
-
-        document.getElementById('staffName').textContent = currentUser.fullName;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            loadCalls();
-            // Poll for new emergency calls every 5 seconds
-            setInterval(checkForNewEmergencies, 5000);
-        });
-
-        async function loadCalls() {
-            try {
-                const response = await fetch(`${VIDEO_SERVICE}/staff/${currentUser.id}`);
-                const data = await response.json();
-
-                const emergencies = data.calls.filter(c => c.status === 'urgent');
-                const scheduled = data.calls.filter(c => c.status === 'scheduled');
-                const history = data.calls.filter(c => ['completed', 'cancelled'].includes(c.status));
-
-                renderEmergencies(emergencies);
-                renderScheduled(scheduled);
-                renderHistory(history);
-
-                return emergencies;
-
-            } catch (err) {
-                console.error('Failed to load calls:', err);
-                return [];
+        // Authentication & Role Guard
+        (function () {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!token || !user) {
+                window.location.href = '/';
+                return;
             }
-        }
+            if (user.role !== 'staff' && user.role !== 'admin') {
+                alert('Access denied. Staff only.');
+                window.location.href = '/client-dashboard.html';
+            }
+        })();
 
-        async function checkForNewEmergencies() {
-            try {
-                const response = await fetch(`${VIDEO_SERVICE}/staff/${currentUser.id}`);
-                const data = await response.json();
-
-                const emergencies = data.calls.filter(c => c.status === 'urgent');
-
-                // Check for NEW emergency calls
-                if (emergencies.length > previousEmergencyCount && previousEmergencyCount >= 0) {
-                    const newCall = emergencies[0]; // Get the most recent
-                    showIncomingCallNotification(newCall);
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'aida-primary': '#2563eb',
+                        'aida-success': '#059669',
+                        'aida-danger': '#e11d48',
+                    }
                 }
-
-                previousEmergencyCount = emergencies.length;
-                renderEmergencies(emergencies);
-
-            } catch (err) {
-                console.error('Error checking emergencies:', err);
             }
         }
 
-        function showIncomingCallNotification(call) {
-            currentIncomingCall = call;
-
-            // Update modal content
-            document.getElementById('callerName').textContent = call.client_name || 'Client #' + call.client_id;
-            document.getElementById('callType').innerHTML = call.call_type === 'emergency'
-                ? '<i class="fa-solid fa-exclamation-circle"></i> Emergency Call'
-                : '<i class="fa-solid fa-calendar"></i> Scheduled Check-in';
-            document.getElementById('callReason').textContent = call.emergency_reason || 'Incoming call';
-
-            // Show modal and play ringtone
-            document.getElementById('incomingCallModal').classList.remove('hidden');
-
-            // Play ringtone
-            ringtone.currentTime = 0;
-            ringtone.play().catch(e => console.log('Audio autoplay blocked:', e));
-
-            // Browser notification
-            if (Notification.permission === 'granted') {
-                new Notification('Incoming Call - AIDA', {
-                    body: `${call.client_name || 'Client'} is calling`,
-                    icon: 'https://cdn-icons-png.flaticon.com/512/3616/3616215.png'
-                });
-            }
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
         }
-
-        function answerIncomingCall() {
-            ringtone.pause();
-            document.getElementById('incomingCallModal').classList.add('hidden');
-
-            if (currentIncomingCall && currentIncomingCall.host_url) {
-                joinCall(currentIncomingCall.host_url);
-            }
-            currentIncomingCall = null;
-        }
-
-        function declineIncomingCall() {
-            ringtone.pause();
-            document.getElementById('incomingCallModal').classList.add('hidden');
-            currentIncomingCall = null;
-        }
-
-        function renderEmergencies(calls) {
-            const section = document.getElementById('emergencySection');
-            const list = document.getElementById('emergencyList');
-
-            if (calls.length === 0) {
-                section.classList.add('hidden');
-                return;
-            }
-
-            section.classList.remove('hidden');
-            list.innerHTML = calls.map(call => `
-                <div class="emergency-card bg-white rounded-xl p-6 shadow-lg">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-xl font-bold text-red-600">
-                                <i class="fa-solid fa-phone-volume"></i> ${call.client_name || 'Client #' + call.client_id}
-                            </h3>
-                            <p class="text-gray-600 mt-2">${call.emergency_reason}</p>
-                            <p class="text-sm text-gray-400 mt-1">${new Date(call.created_at).toLocaleString('en-SG', { timeZone: 'Asia/Singapore' })}</p>
-                        </div>
-                        <button onclick="joinCall('${call.host_url}')" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold animate-pulse">
-                            <i class="fa-solid fa-phone"></i> ANSWER
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function renderScheduled(calls) {
-            const list = document.getElementById('scheduledList');
-
-            if (calls.length === 0) {
-                list.innerHTML = '<p class="text-gray-500">No scheduled calls.</p>';
-                return;
-            }
-
-            list.innerHTML = calls.map(call => `
-                <div class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h3 class="text-lg font-bold text-gray-800">
-                                <i class="fa-solid fa-user text-blue-500"></i> ${call.client_name || 'Client #' + call.client_id}
-                            </h3>
-                            <p class="text-sm text-gray-500 mt-1">
-                                <i class="fa-solid fa-clock"></i> ${new Date(call.scheduled_time).toLocaleString('en-SG', { timeZone: 'Asia/Singapore' })}
-                            </p>
-                            <p class="text-gray-600 mt-2">${call.notes || 'Routine check-in'}</p>
-                        </div>
-                        <button onclick="joinCall('${call.host_url}')" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg">
-                            <i class="fa-solid fa-video"></i> Start Call
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function renderHistory(calls) {
-            const list = document.getElementById('historyList');
-
-            if (calls.length === 0) {
-                list.innerHTML = '<p class="text-gray-500">No call history yet.</p>';
-                return;
-            }
-
-            list.innerHTML = calls.map(call => `
-                <div class="bg-gray-50 rounded-xl p-4 border">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <span class="text-gray-700 font-medium">${call.client_name || 'Client #' + call.client_id}</span>
-                            <span class="text-sm text-gray-400 ml-4">${new Date(call.created_at).toLocaleDateString('en-SG', { timeZone: 'Asia/Singapore' })}</span>
-                            <span class="ml-2 px-2 py-1 text-xs rounded ${call.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}">${call.status}</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function joinCall(url) {
-            ringtone.pause(); // Stop ringtone if playing
-            document.getElementById('wherebyFrame').src = url;
-            document.getElementById('callModal').classList.remove('hidden');
-        }
-
-        function closeCallModal() {
-            document.getElementById('callModal').classList.add('hidden');
-            document.getElementById('wherebyFrame').src = '';
-            loadCalls();
-        }
-
-        function openNewCallModal() {
-            document.getElementById('newCallModal').classList.remove('hidden');
-            loadClients();
-        }
-
-        function closeModal() {
-            document.getElementById('newCallModal').classList.add('hidden');
-        }
-
-        async function loadClients() {
-            try {
-                const response = await fetch(`${AUTH_SERVICE}/users?role=client`);
-                const clients = await response.json();
-                const select = document.getElementById('selectClient');
-                select.innerHTML = '<option value="">-- Choose Client --</option>' +
-                    clients.map(c => `<option value="${c.id}">${c.full_name}</option>`).join('');
-            } catch (err) {
-                console.error('Failed to load clients');
-            }
-        }
-
-        document.getElementById('newCallForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const data = {
-                staffId: currentUser.id,
-                clientId: document.getElementById('selectClient').value,
-                scheduledTime: document.getElementById('scheduleTime').value,
-                notes: document.getElementById('callNotes').value
-            };
-
-            try {
-                const response = await fetch(`${VIDEO_SERVICE}/checkin`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                if (response.ok) {
-                    closeModal();
-                    loadCalls();
-                    alert('Check-in call scheduled!');
-                } else {
-                    alert('Failed to schedule call.');
-                }
-            } catch (err) {
-                console.error('Error scheduling call:', err);
-            }
-        });
 
         function logout() {
             localStorage.clear();
             window.location.href = '/';
         }
 
-        // Request notification permission on load
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
+        // Initialize Avatar on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user && user.profileImageUrl) {
+                const fullUrl = user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `http://localhost:5001${user.profileImageUrl}`;
+
+                // Update sidebar avatar
+                const sidebarAvatarContainer = document.querySelector('.sidebar .bg-slate-200');
+                if (sidebarAvatarContainer) {
+                    sidebarAvatarContainer.innerHTML = `<img src="${fullUrl}" class="w-full h-full object-cover rounded-full">`;
+                }
+
+                // Update mobile header avatar
+                const mobileAvatarContainer = document.querySelector('.mobile-header .bg-slate-900');
+                if (mobileAvatarContainer) {
+                    mobileAvatarContainer.innerHTML = `<img src="${fullUrl}" class="w-full h-full object-cover rounded-lg">`;
+                }
+            }
+        });
     </script>
+</head>
+
+<body class="bg-slate-50 text-slate-900">
+
+    <div class="app-container">
+        <!-- Mobile Header -->
+        <header class="mobile-header">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
+                    <i class="fa-solid fa-user-shield text-white text-sm"></i>
+                </div>
+                <span class="font-bold">Staff Portal</span>
+            </div>
+            <button onclick="toggleSidebar()" class="menu-toggle">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </header>
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="mb-10 flex items-center space-x-3 px-2">
+                <div class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-user-shield text-white text-xl"></i>
+                </div>
+                <span class="logo-text text-xl font-bold tracking-tight">Staff Portal</span>
+            </div>
+
+            <nav class="flex-1 space-y-1">
+                <a href="/staff-calls.html" class="nav-item active">
+                    <i class="fa-solid fa-headset"></i>
+                    <span class="nav-label">Calls</span>
+                </a>
+                <a href="/staff-clients.html" class="nav-item">
+                    <i class="fa-solid fa-users"></i>
+                    <span class="nav-label">Clients</span>
+                </a>
+                <a href="/staff-settings.html" class="nav-item">
+                    <i class="fa-solid fa-cog"></i>
+                    <span class="nav-label">Settings</span>
+                </a>
+            </nav>
+
+            <div class="mt-auto pt-6 border-t border-slate-100">
+                <div class="flex items-center justify-between px-2 mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-user-nurse text-slate-500"></i>
+                        </div>
+                        <div class="user-details">
+                            <p id="staffName" class="text-sm font-bold truncate max-w-[120px]">Staff</p>
+                            <p class="text-xs text-slate-400">Supervisor</p>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900">Communication Center</h1>
+                    <p class="text-slate-500 text-sm md:text-base">Manage checks-ins and emergency responses.</p>
+                </div>
+                <div>
+                    <button onclick="openNewCallModal()"
+                        class="bg-slate-900 text-white w-full sm:w-auto px-6 py-4 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center">
+                        <i class="fa-solid fa-plus mr-2"></i> Schedule Call
+                    </button>
+                </div>
+            </header>
+
+            <!-- Modern Tab Navigation -->
+            <div class="tab-nav">
+                <button id="tabEmergency" class="tab-btn active" onclick="switchTab('emergency')">
+                    <i class="fa-solid fa-tower-broadcast"></i> Emergency
+                    <span id="emergencyBadge"
+                        class="ml-2 bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full hidden">0</span>
+                </button>
+                <button id="tabScheduled" class="tab-btn" onclick="switchTab('scheduled')">
+                    <i class="fa-solid fa-calendar-alt"></i> Scheduled
+                </button>
+                <button id="tabEmergencyHistory" class="tab-btn" onclick="switchTab('emergencyHistory')">
+                    <i class="fa-solid fa-history"></i> SOS History
+                </button>
+                <button id="tabHistory" class="tab-btn" onclick="switchTab('history')">
+                    <i class="fa-solid fa-check-double"></i> Check-in History
+                </button>
+            </div>
+
+            <!-- Content Panels -->
+            <div class="mt-6">
+                <!-- Emergency Panel -->
+                <section id="panelEmergency" class="tab-panel hidden">
+                    <div id="emergencyList" class="grid grid-cols-1 gap-4">
+                        <!-- JS Populated -->
+                    </div>
+                    <div id="noEmergencyMsg" class="hidden card text-center p-12 border-dashed">
+                        <i class="fa-solid fa-shield-check text-slate-200 text-5xl mb-4"></i>
+                        <p class="text-slate-400 font-medium">No active emergencies. System clear.</p>
+                    </div>
+                </section>
+
+                <!-- Scheduled Panel -->
+                <section id="panelScheduled" class="tab-panel">
+                    <div id="scheduledList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- JS Populated -->
+                    </div>
+                </section>
+
+                <!-- SOS History -->
+                <section id="panelEmergencyHistory" class="tab-panel hidden">
+                    <div id="emergencyHistoryList" class="grid grid-cols-1 gap-4">
+                        <!-- JS Populated -->
+                    </div>
+                </section>
+
+                <!-- Check-in History -->
+                <section id="panelHistory" class="tab-panel hidden">
+                    <div id="historyList" class="grid grid-cols-1 gap-4">
+                        <!-- JS Populated -->
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Incoming Call Modal -->
+    <div id="incomingCallModal" class="hidden incoming-call-modal">
+        <div class="text-center animate-in">
+            <div class="caller-avatar-container mx-auto">
+                <div class="wave-animation"></div>
+                <div class="wave-animation" style="animation-delay: 0.5s"></div>
+                <div class="caller-avatar">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+            </div>
+
+            <p class="text-rose-500 font-bold tracking-widest uppercase text-sm mb-2">Urgent Emergency</p>
+            <h2 id="callerName" class="text-4xl font-black text-white mb-2">Client Name</h2>
+            <p id="callReason" class="text-slate-400 text-lg mb-10">Reason: Requesting immediate assistance</p>
+
+            <div class="flex justify-center space-x-8">
+                <button onclick="declineIncomingCall()"
+                    class="w-20 h-20 bg-white/10 text-white rounded-full hover:bg-rose-600 transition-all flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-phone-slash text-2xl"></i>
+                </button>
+                <button onclick="answerIncomingCall()"
+                    class="w-20 h-20 bg-emerald-500 text-white rounded-full hover:bg-emerald-600 transition-all flex items-center justify-center shadow-xl shadow-emerald-500/20 animate-bounce">
+                    <i class="fa-solid fa-phone text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (Scheduling / Editing) -->
+    <div id="newCallModal" class="hidden modal-overlay">
+        <div class="modal-content animate-in">
+            <h3 class="text-2xl font-black mb-6">Schedule Check-in</h3>
+            <form id="newCallForm" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">Recipient
+                        Client</label>
+                    <select id="selectClient" required></select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">Scheduled
+                        Time</label>
+                    <input type="datetime-local" id="scheduleTime" required />
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">Notes /
+                        Purpose</label>
+                    <textarea id="callNotes" rows="3" placeholder="Morning health check..."></textarea>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeModal()" class="btn-secondary flex-1">Cancel</button>
+                    <button type="submit" class="btn-primary flex-1">Create Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editCallModal" class="hidden modal-overlay">
+        <div class="modal-content animate-in">
+            <h3 class="text-2xl font-black mb-6">Modify Schedule</h3>
+            <form id="editCallForm" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">Recipient
+                        Client</label>
+                    <select id="editSelectClient" required></select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">Scheduled
+                        Time</label>
+                    <input type="datetime-local" id="editScheduleTime" required>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">Notes /
+                        Purpose</label>
+                    <textarea id="editCallNotes" rows="3"></textarea>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeEditModal()" class="btn-secondary flex-1">Cancel</button>
+                    <button type="submit" class="btn-primary flex-1">Update Call</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Video Frame Modal -->
+    <div id="callModal" class="hidden fixed inset-0 bg-black z-[2000] flex flex-col">
+        <div class="p-4 bg-slate-900 flex justify-between items-center text-white">
+            <div class="flex items-center space-x-3">
+                <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <span class="font-bold text-sm tracking-widest uppercase">Live Session</span>
+            </div>
+            <button onclick="closeCallModal()"
+                class="bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-lg font-bold text-sm transition-all">
+                End Session
+            </button>
+        </div>
+        <iframe id="wherebyFrame" src="" allow="camera; microphone; fullscreen; display-capture"
+            class="flex-1 w-full border-none"></iframe>
+    </div>
+
+    <audio id="ringtone" loop>
+        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg" />
+    </audio>
+
+    <script src="/js/staff-calls.js"></script>
 </body>
 
 </html>

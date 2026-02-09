@@ -4,143 +4,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | AIDA Calendar</title>
+    <title>Calendar | AIDA Personal Safety</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/css/client-dashboard.css">
     <link rel="stylesheet" href="/css/calendar.css">
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+
+    <script>
+        // Authentication Guard
+        (function () {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            if (!token || !user) {
+                window.location.href = '/';
+            }
+        })();
+
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'aida-primary': '#2563eb',
+                        'aida-success': '#059669',
+                        'aida-danger': '#e11d48',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 
-<body>
+<body class="bg-slate-50 text-slate-900">
+
     <div class="app-container">
-        <!-- Header -->
-        <header class="header">
-            <div class="logo">
-                <span>🗓️</span> AIDA Schedule
-            </div>
-            <div class="header-right">
-                <div id="connectionStatus"></div>
-                <button class="btn-primary" id="googleCalendarBtn">
-                    Connect Google Calendar
-                </button>
-            </div>
-        </header>
-
-        <!-- Sidebar / Stats Area -->
-        <aside class="sidebar-content">
-            <!-- Date Navigator -->
-            <div class="date-nav">
-                <button class="btn-icon" id="prevDay">←</button>
-                <div class="current-date">
-                    <h2 id="currentDateDisplay">Today</h2>
-                    <p id="dateString">Loading date...</p>
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="mb-10 flex items-center space-x-3 px-2">
+                <div
+                    class="w-10 h-10 bg-aida-primary rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+                    <i class="fa-solid fa-shield-heart text-white text-xl"></i>
                 </div>
-                <button class="btn-icon" id="nextDay">→</button>
+                <span class="logo-text text-xl font-bold tracking-tight">AIDA</span>
             </div>
 
-            <!-- Progress Card -->
-            <div class="card progress-card">
-                <div class="progress-ring-container">
-                    <!-- Simple percentage display for now, could be SVG ring later -->
-                    <div class="progress-percentage" id="progressPercent">0%</div>
-                    <div class="progress-label">Daily Goal</div>
-                </div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
-                </div>
-                <p style="margin-top: 1rem; color: var(--text-muted);">
-                    <span id="completedCount">0</span> of <span id="totalCount">0</span> tasks completed
-                </p>
-            </div>
+            <nav class="flex-1 space-y-1">
+                <a href="/client-dashboard.html" class="nav-item">
+                    <i class="fa-solid fa-home"></i>
+                    <span class="nav-label">Home</span>
+                </a>
+                <a href="#" class="nav-item active">
+                    <i class="fa-solid fa-calendar"></i>
+                    <span class="nav-label">Calendar</span>
+                </a>
+                <a href="/pet-view.html" class="nav-item">
+                    <i class="fa-solid fa-paw"></i>
+                    <span class="nav-label">My Pet</span>
+                </a>
+            </nav>
 
-            <!-- Points Card -->
-            <div class="card">
-                <div class="points-display">
-                    <span>⭐</span>
-                    <span class="points-value" id="totalPoints">0</span>
-                    <span>Pts</span>
-                </div>
-                <div class="stats-grid" style="margin-top: 1.5rem;">
-                    <div class="stat-item">
-                        <span class="stat-value" id="todayPoints">+0</span>
-                        <span class="stat-label">Today</span>
+            <div class="mt-auto pt-6 border-t border-slate-100">
+                <div class="flex items-center justify-between px-2 mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-user text-slate-500"></i>
+                        </div>
+                        <div class="user-details">
+                            <p id="sidebarUserName" class="text-sm font-bold">User</p>
+                            <p class="text-xs text-slate-400">Basic Member</p>
+                        </div>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-value" id="weekPoints">0</span>
-                        <span class="stat-label">Week</span>
-                    </div>
+                    <button id="logoutBtn" class="text-slate-400 hover:text-red-500 transition-colors">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
                 </div>
             </div>
-
         </aside>
+
+        <!-- Mobile Bottom Nav -->
+        <nav class="mobile-nav">
+            <a href="/client-dashboard.html" class="text-slate-400 flex flex-col items-center">
+                <i class="fa-solid fa-home text-xl"></i>
+                <span class="text-[10px] font-bold mt-1">Home</span>
+            </a>
+            <a href="#" class="text-blue-600 flex flex-col items-center">
+                <i class="fa-solid fa-calendar text-xl"></i>
+                <span class="text-[10px] font-bold mt-1">Calendar</span>
+            </a>
+            <a href="/pet-view.html" class="text-slate-400 flex flex-col items-center">
+                <i class="fa-solid fa-paw text-xl"></i>
+                <span class="text-[10px] font-bold mt-1">My Pet</span>
+            </a>
+        </nav>
 
         <!-- Main Content Area -->
         <main class="main-content">
+            <!-- Top Panel: Stats & Schedule -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+                <!-- Left: Stats -->
+                <div class="lg:col-span-4 space-y-6">
+                    <!-- Date Navigator -->
+                    <div class="card date-nav">
+                        <button class="btn-icon" id="prevDay">←</button>
+                        <div class="current-date text-center">
+                            <h2 id="currentDateDisplay" class="m-0">Today</h2>
+                            <p id="dateString" class="text-xs text-slate-400 m-0">Loading date...</p>
+                        </div>
+                        <button class="btn-icon" id="nextDay">→</button>
+                    </div>
 
-            <!-- Tasks List Section -->
-            <section>
-                <div class="task-header">
-                    <div class="task-title-group">
-                        <h2>Your Schedule</h2>
-                        <div class="calendar-views" id="calendarViewSelector" style="display: none;">
-                            <button class="view-btn active" data-view="WEEK">Week</button>
-                            <button class="view-btn" data-view="MONTH">Month</button>
-                            <button class="view-btn" data-view="AGENDA">Agenda</button>
+                    <!-- Progress Card -->
+                    <div class="card progress-card">
+                        <div class="progress-ring-container">
+                            <div class="progress-percentage text-3xl" id="progressPercent">0%</div>
+                            <div class="progress-label text-[10px]">Daily Goal</div>
+                        </div>
+                        <div class="progress-bar-container h-2 mt-4">
+                            <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                        <p class="mt-4 text-xs text-slate-500 text-center">
+                            <span id="completedCount">0</span> of <span id="totalCount">0</span> tasks completed
+                        </p>
+                    </div>
+
+                    <!-- Points Card -->
+                    <div class="card points-card">
+                        <div class="points-display flex items-baseline justify-center gap-2">
+                            <span class="text-2xl">⭐</span>
+                            <span class="text-4xl font-black text-blue-600" id="totalPoints">0</span>
+                            <span class="text-sm font-bold text-slate-400 uppercase tracking-wider">Pts</span>
+                        </div>
+                        <div class="stats-grid grid grid-cols-2 gap-3 mt-6">
+                            <div class="stat-item bg-white/50 p-3 rounded-xl border border-blue-50/50">
+                                <span class="text-lg font-bold text-blue-600 block" id="todayPoints">+0</span>
+                                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter"
+                                    id="todayLabel">Today</span>
+                            </div>
+                            <div class="stat-item bg-white/50 p-3 rounded-xl border border-blue-50/50">
+                                <span class="text-lg font-bold text-blue-600 block" id="weekPoints">0</span>
+                                <span
+                                    class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Week</span>
+                            </div>
                         </div>
                     </div>
-                    <button class="btn-primary" id="addTaskBtn">+ Add New Task</button>
                 </div>
 
-                <div class="task-list" id="tasksList">
-                    <!-- Tasks injected by JS -->
-                    <div style="padding: 3rem; text-align: center; color: var(--text-muted);">
-                        Loading tasks...
+                <!-- Right: Schedule -->
+                <div class="lg:col-span-8">
+                    <section class="card h-full flex flex-col overflow-hidden">
+                        <div class="task-header flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-bold">Your Schedule</h2>
+                            <button class="btn-primary" id="addTaskBtn">
+                                <i class="fa-solid fa-plus mr-2"></i>New Task
+                            </button>
+                        </div>
+
+                        <div class="task-list flex-1 overflow-y-auto pr-2 custom-scrollbar" id="tasksList"
+                            style="max-height: 400px;">
+                            <!-- Tasks injected by JS -->
+                            <div class="py-10 text-center text-slate-400">
+                                <i class="fa-solid fa-spinner fa-spin text-2xl mb-4"></i>
+                                <p>Loading tasks...</p>
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="emptyState" class="hidden text-center py-10">
+                            <div class="text-4xl mb-4">🌴</div>
+                            <h3 class="font-bold">No tasks scheduled</h3>
+                            <p class="text-slate-500">Enjoy your free time!</p>
+                        </div>
+
+                        <!-- All Done State -->
+                        <div id="allDoneState" class="hidden text-center py-10">
+                            <div class="text-4xl mb-4">🏆</div>
+                            <h3 class="font-bold">All tasks completed!</h3>
+                            <p class="text-slate-500">You earned <span id="earnedPoints">0</span> points today!</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Bottom Panel: Full Width Calendar -->
+            <div class="calendar-area">
+                <!-- Google Calendar Section -->
+                <section id="calendarSection" class="hidden">
+                    <div class="card p-0 overflow-hidden min-h-[600px]">
+                        <iframe id="googleCalendarFrame" src="" class="w-full h-[800px] border-0" frameborder="0"
+                            scrolling="no">
+                        </iframe>
                     </div>
-                </div>
+                </section>
 
-                <!-- Empty State -->
-                <div id="emptyState" style="display: none; text-align: center; padding: 4rem;">
-                    <div style="font-size: 4rem; margin-bottom: 1rem;">🌴</div>
-                    <h3>No tasks scheduled</h3>
-                    <p style="color: var(--text-muted);">Enjoy your free time!</p>
-                </div>
-            </section>
+                <!-- Fallback Calendar Section (Shown when not connected) -->
+                <section id="fallbackCalendarSection">
+                    <div class="card">
+                        <div class="calendar-header-custom flex justify-between items-center mb-6">
+                            <h3 id="calMonthYear" class="text-xl font-bold">Month Year</h3>
+                            <div class="flex items-center gap-4">
+                                <button id="googleCalendarBtn"
+                                    class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-[10px] font-bold flex items-center gap-2 hover:bg-blue-100 transition-colors uppercase tracking-wider">
+                                    <i class="fa-brands fa-google text-sm"></i>
+                                    Connect Google
+                                </button>
+                                <div class="flex gap-2 border-l border-slate-100 pl-4">
+                                    <button class="btn-icon" id="calPrevMonth">←</button>
+                                    <button class="btn-icon" id="calNextMonth">→</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="calendar-grid-header grid grid-cols-7 mb-2">
+                            <div class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sun
+                            </div>
+                            <div class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mon
+                            </div>
+                            <div class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tue
+                            </div>
+                            <div class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Wed
+                            </div>
+                            <div class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Thu
+                            </div>
+                            <div class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fri
+                            </div>
+                            <div class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sat
+                            </div>
+                        </div>
+                        <div class="calendar-grid grid grid-cols-7 gap-px bg-slate-100 rounded-xl overflow-hidden border border-slate-100"
+                            id="calendarGrid">
+                            <!-- Days injected by JS -->
+                        </div>
+                    </div>
+                </section>
+            </div>
         </main>
-
-        <div class="calendar-area">
-            <!-- Google Calendar Section -->
-            <section id="calendarSection" style="display: none;">
-                <div class="card" style="padding: 0; overflow: hidden; height: 1000px;">
-                    <iframe id="googleCalendarFrame" src="" style="border: 0" width="100%" height="100%" frameborder="0"
-                        scrolling="no">
-                    </iframe>
-                </div>
-            </section>
-
-            <!-- Fallback Calendar Section (Shown when not connected) -->
-            <section id="fallbackCalendarSection">
-                <div class="card">
-                    <div class="calendar-header-custom">
-                        <h3 id="calMonthYear">Month Year</h3>
-                        <div class="cal-nav">
-                            <button class="btn-icon" id="calPrevMonth">←</button>
-                            <button class="btn-icon" id="calNextMonth">→</button>
-                        </div>
-                    </div>
-                    <div class="calendar-grid-header">
-                        <div>Sun</div>
-                        <div>Mon</div>
-                        <div>Tue</div>
-                        <div>Wed</div>
-                        <div>Thu</div>
-                        <div>Fri</div>
-                        <div>Sat</div>
-                    </div>
-                    <div class="calendar-grid" id="calendarGrid">
-                        <!-- Days injected by JS -->
-                    </div>
-                </div>
-            </section>
-        </div>
 
         <!-- Modals and Overlays -->
         <div class="modal-overlay" id="addTaskModal">
@@ -187,14 +288,14 @@
                                     style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Category</label>
                                 <select id="taskCategory"
                                     style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
-                                    <option value="general">General</option>
-                                    <option value="breakfast">Breakfast</option>
-                                    <option value="lunch">Lunch</option>
-                                    <option value="dinner">Dinner</option>
-                                    <option value="hygiene">Hygiene</option>
-                                    <option value="exercise">Exercise</option>
-                                    <option value="medication">Medication</option>
-                                    <option value="social">Social</option>
+                                    <option value="General">📌 General</option>
+                                    <option value="Breakfast">🍳 Breakfast</option>
+                                    <option value="Lunch">🥗 Lunch</option>
+                                    <option value="Dinner">🍽️ Dinner</option>
+                                    <option value="Hygiene">🧼 Hygiene</option>
+                                    <option value="Exercise">🏃 Exercise</option>
+                                    <option value="Medication">💊 Medication</option>
+                                    <option value="Social">👥 Social</option>
                                 </select>
                             </div>
                             <div style="margin-bottom: 2rem;">

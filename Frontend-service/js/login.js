@@ -3,6 +3,20 @@
 
 const AUTH_SERVICE_URL = 'http://localhost:5001/api/auth';
 
+// Toast notification system
+function showToast(message, type = 'info') {
+    const existing = document.getElementById('toastNotification');
+    if (existing) existing.remove();
+    const colors = { success: 'bg-emerald-500', error: 'bg-red-500', warning: 'bg-amber-500', info: 'bg-blue-500' };
+    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+    const toast = document.createElement('div');
+    toast.id = 'toastNotification';
+    toast.className = `fixed top-6 right-6 z-[9999] ${colors[type]} text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center space-x-3 max-w-md`;
+    toast.style.animation = 'slideIn 0.3s ease-out';
+    toast.innerHTML = `<i class="fa-solid ${icons[type]} text-xl"></i><span class="font-medium">${message}</span><button onclick="this.parentElement.remove()" class="ml-4 hover:opacity-70"><i class="fa-solid fa-times"></i></button>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
 document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------------------
     // CLIENT Login Handling
@@ -21,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = passwordInput.value.trim();
 
             if (!username || !password) {
-                alert('Please enter both your name and password.');
+                showToast('Please enter both your name and password.', 'warning');
                 return;
             }
 
@@ -54,13 +68,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.location.href = '/client-dashboard.html';
                     }, 1000);
                 } else {
-                    alert(data.message || 'Login failed. Please check your details.');
+                    showToast(data.message || 'Login failed. Please check your details.', 'error');
                     submitBtn.innerHTML = originalBtnText;
                     submitBtn.disabled = false;
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                alert('Something went wrong. Please try again later.');
+                showToast('Something went wrong. Please try again later.', 'error');
                 submitBtn.innerHTML = originalBtnText;
                 submitBtn.disabled = false;
             }
@@ -84,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = passwordInput.value.trim();
 
             if (!username || !password) {
-                alert('Please fill in all fields.');
+                showToast('Please fill in all fields.', 'warning');
                 return;
             }
 
@@ -111,13 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     window.location.href = '/staff-calls.html';
                 } else {
-                    alert(data.message || 'Invalid credentials.');
+                    showToast(data.message || 'Invalid credentials.', 'error');
                     submitBtn.innerHTML = originalBtnText;
                     submitBtn.disabled = false;
                 }
             } catch (error) {
                 console.error('Staff Login error:', error);
-                alert('Server error. Contact IT support.');
+                showToast('Server error. Contact IT support.', 'error');
                 submitBtn.innerHTML = originalBtnText;
                 submitBtn.disabled = false;
             }

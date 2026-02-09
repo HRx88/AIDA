@@ -5,16 +5,24 @@ const Points = require('../models/pointsModel');
  */
 const getBalance = async (req, res) => {
     const { userId } = req.params;
+    const { date } = req.query;
 
     try {
         const balance = await Points.getBalance(userId);
-        const todayPoints = await Points.getTodayPoints(userId);
         const weekPoints = await Points.getWeekPoints(userId);
+
+        // If a specific date is provided, get points for that date; otherwise get today's
+        let datePoints;
+        if (date) {
+            datePoints = await Points.getDatePoints(userId, date);
+        } else {
+            datePoints = await Points.getTodayPoints(userId);
+        }
 
         res.json({
             userId: parseInt(userId),
             total: balance,
-            today: todayPoints,
+            today: datePoints,
             thisWeek: weekPoints
         });
     } catch (err) {

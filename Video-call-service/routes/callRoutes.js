@@ -17,4 +17,13 @@ router.get('/client/:clientId', callController.getClientCalls);
 // Update call status
 router.patch('/:callId/status', callController.updateCallStatus);
 
+// Update call details
+router.put('/:callId', callController.updateCall);
+
+// Get single call by ID
+router.get('/:callId', callController.getCallById);
+
+// Delete call
+router.delete('/:callId', callController.deleteCall);
+
 module.exports = router;

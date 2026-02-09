@@ -6,8 +6,21 @@ const WHEREBY_API_URL = 'https://api.whereby.dev/v1';
 
 /**
  * Create a Whereby room (or placeholder if no API key)
+ * @param {string} roomName - prefix for room name
+ * @param {boolean} isLocked - whether room is locked
+ * @param {Date|string} scheduledTime - when the call is scheduled (for room expiry)
  */
-const createWherebyRoom = async (roomName, isLocked = false) => {
+const createWherebyRoom = async (roomName, isLocked = false, scheduledTime = null) => {
+    // Calculate end date: scheduled time + 2 hours buffer, or 24 hours from now if no scheduled time
+    let endDate;
+    if (scheduledTime) {
+        endDate = new Date(scheduledTime);
+        endDate.setHours(endDate.getHours() + 2); // Room expires 2 hours after scheduled time
+    } else {
+        endDate = new Date();
+        endDate.setHours(endDate.getHours() + 24); // Emergency calls: 24 hour expiry
+    }
+
     if (!WHEREBY_API_KEY || WHEREBY_API_KEY === 'your_key_here') {
         console.warn('Whereby API key not configured. Using placeholder URLs.');
         return {
@@ -16,9 +29,6 @@ const createWherebyRoom = async (roomName, isLocked = false) => {
             meetingId: `demo-${Date.now()}`
         };
     }
-
-    const endDate = new Date();
-    endDate.setHours(endDate.getHours() + 24);
 
     const response = await fetch(`${WHEREBY_API_URL}/meetings`, {
         method: 'POST',
@@ -54,7 +64,8 @@ const createCheckInCall = async (req, res) => {
 
     try {
         const roomName = `checkin-${staffId}-${clientId}-${Date.now()}`;
-        const wherebyRoom = await createWherebyRoom(roomName, true);
+        // Pass scheduledTime to Whereby so room expires appropriately
+        const wherebyRoom = await createWherebyRoom(roomName, true, scheduledTime);
 
         let savedCall = null;
         try {
@@ -117,6 +128,7 @@ const createEmergencyCall = async (req, res) => {
 
         res.status(201).json({
             message: 'Emergency call created - Staff will be notified',
+            callId: savedCall ? savedCall.id : null,
             call: savedCall,
             roomUrl: wherebyRoom.roomUrl
         });
@@ -179,10 +191,105 @@ const updateCallStatus = async (req, res) => {
     }
 };
 
+/**
+ * Update call details (time, notes, client)
+ * If scheduledTime changes, regenerate Whereby room with new expiry
+ */
+const updateCall = async (req, res) => {
+    const { callId } = req.params;
+    const { clientId, scheduledTime, notes } = req.body;
+
+    try {
+        // Get existing call to check if time changed
+        const existingCall = await Call.findById(callId);
+        if (!existingCall) {
+            return res.status(404).json({ message: 'Call not found' });
+        }
+
+        let newRoomUrl = null;
+        let newHostUrl = null;
+
+        // If scheduled time changed, create new Whereby room with correct expiry
+        // Compare only up to minutes (ignore seconds/ms which might be in DB but not in UI input)
+        const isTimeChanged = scheduledTime &&
+            Math.floor(new Date(scheduledTime).getTime() / 60000) !== Math.floor(new Date(existingCall.scheduled_time).getTime() / 60000);
+
+        if (isTimeChanged) {
+            console.log('Scheduled time changed - creating new Whereby room');
+            const roomName = `checkin-${existingCall.staff_id}-${clientId || existingCall.client_id}-${Date.now()}`;
+            try {
+                const wherebyRoom = await createWherebyRoom(roomName, true, scheduledTime);
+                newRoomUrl = wherebyRoom.roomUrl;
+                newHostUrl = wherebyRoom.hostRoomUrl;
+            } catch (wherebyErr) {
+                console.warn('Whereby room creation failed, falling back to placeholder:', wherebyErr.message);
+                newRoomUrl = `https://whereby.com/aida-demo-${roomName}`;
+                newHostUrl = `https://whereby.com/aida-demo-${roomName}?roomKey=host`;
+            }
+        }
+
+        const updatedCall = await Call.update(callId, {
+            clientId,
+            scheduledTime,
+            notes,
+            roomUrl: newRoomUrl,
+            hostUrl: newHostUrl
+        });
+
+        res.json({ message: 'Call updated successfully', call: updatedCall });
+
+    } catch (err) {
+        console.error('Error updating call:', err);
+        res.status(500).json({ message: 'Failed to update call' });
+    }
+};
+
+/**
+ * Delete a call
+ */
+const deleteCall = async (req, res) => {
+    const { callId } = req.params;
+
+    try {
+        const deleted = await Call.delete(callId);
+
+        if (!deleted) {
+            return res.status(404).json({ message: 'Call not found' });
+        }
+
+        res.json({ message: 'Call deleted successfully' });
+
+    } catch (err) {
+        console.error('Error deleting call:', err);
+        res.status(500).json({ message: 'Failed to delete call' });
+    }
+};
+
+/**
+ * Get a single call by ID
+ */
+const getCallById = async (req, res) => {
+    const { callId } = req.params;
+
+    try {
+        const call = await Call.findById(callId);
+        if (!call) {
+            return res.status(404).json({ message: 'Call not found' });
+        }
+        res.json(call);
+    } catch (err) {
+        console.error('Error fetching call:', err);
+        res.status(500).json({ message: 'Failed to fetch call' });
+    }
+};
+
 module.exports = {
     createCheckInCall,
     createEmergencyCall,
     getStaffCalls,
     getClientCalls,
-    updateCallStatus
+    getCallById,
+    updateCallStatus,
+    updateCall,
+    deleteCall
 };

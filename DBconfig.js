@@ -1,6 +1,7 @@
 // db.js (or database connection file)
 const { Pool } = require('pg');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const config = {
     user: process.env.SUPABASE_USER,     // usually 'postgres'
