@@ -1,6 +1,6 @@
 // Staff Client Management JavaScript
-const AUTH_SERVICE = 'http://localhost:5001/api/auth';
-const VIDEO_SERVICE = 'http://localhost:5002/api/calls';
+const AUTH_SERVICE = '/auth/api/auth';
+const VIDEO_SERVICE = '/calls/api/calls';
 
 const token = localStorage.getItem('token');
 const currentUser = JSON.parse(localStorage.getItem('user'));

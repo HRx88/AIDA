@@ -18,9 +18,9 @@
         // Authentication Guard
         (function () {
             const token = localStorage.getItem('token');
-            const user = JSON.parse(localStorage.getItem('user'));
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
             if (!token || !user) {
-                // window.location.href = '/'; // Commented out for dev/testing ease if needed, but should be active
+                window.location.href = '/';
             }
 
             tailwind.config = {
@@ -36,64 +36,7 @@
             }
         })();
     </script>
-    <style>
-        /* Scoped style for the mood label to ensure it stays on top of the pet */
-        #mood-label {
-            position: absolute;
-            top: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-family: 'Arial', sans-serif;
-            font-size: 24px;
-            font-weight: bold;
-            color: #555;
-            text-transform: capitalize;
-            z-index: 10;
-        }
-
-        /* Speech Bubble styles */
-        .speech-bubble {
-            position: absolute;
-            bottom: 110%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            padding: 15px 20px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            border: 2px solid var(--primary);
-            min-width: 200px;
-            text-align: center;
-            z-index: 20;
-            opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            pointer-events: none;
-        }
-
-        .speech-bubble.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(-10px);
-        }
-
-        .speech-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-top: 10px solid var(--primary);
-        }
-
-        /* Centering override */
-        .main-content {
-            max-width: none !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/pet-view.css">
 </head>
 
 <body class="bg-slate-50 text-slate-900">
@@ -118,7 +61,6 @@
                     <i class="fa-solid fa-calendar"></i>
                     <span class="nav-label">Calendar</span>
                 </a>
-                <!-- Added Pet link as active for context -->
                 <a href="#" class="nav-item active">
                     <i class="fa-solid fa-paw"></i>
                     <span class="nav-label">My Pet</span>
@@ -175,129 +117,7 @@
         </main>
     </div>
 
-    <script>
-        const PET_SERVICE_URL = 'http://localhost:5005';
-        const spriteElement = document.getElementById('pet-sprite');
-        const moodLabel = document.getElementById('mood-label');
-
-        let currentMood = 'happy';
-        let currentFrame = 1;
-        let totalFrames = 50;
-        let isInitialLoad = true;
-
-        // User Name Logic
-        const userData = JSON.parse(localStorage.getItem('user'));
-        if (userData && userData.fullName) {
-            const nameEl = document.getElementById('userName');
-            if (nameEl) nameEl.textContent = userData.fullName;
-        }
-
-        // Display profile image in sidebar if available
-        if (userData && userData.profileImageUrl) {
-            const avatarContainer = document.querySelector('.user-details')?.previousElementSibling;
-            if (avatarContainer && avatarContainer.classList.contains('bg-slate-200')) {
-                avatarContainer.innerHTML = `<img src="${userData.profileImageUrl}" class="w-full h-full object-cover rounded-full">`;
-            }
-        }
-
-        const phrases = [
-            "You're doing great!",
-            "Keep up the good work!",
-            "I'm so proud of you!",
-            "One step at a time, you got this!",
-            "You're a superstar!",
-            "Look at you go!",
-            "Amazing progress today!",
-            "You're making it look easy!"
-        ];
-
-        function showDialogue() {
-            const bubble = document.getElementById('speech-bubble');
-            const text = document.getElementById('dialogue-text');
-            text.innerText = phrases[Math.floor(Math.random() * phrases.length)];
-            bubble.classList.add('show');
-            setTimeout(() => {
-                bubble.classList.remove('show');
-            }, 6000);
-        }
-
-        async function updateMood() {
-            try {
-                // Get userId from localStorage
-                const user = JSON.parse(localStorage.getItem('user'));
-                const userId = user ? user.id : null;
-
-                if (!userId) {
-                    console.error("No userId found in localStorage");
-                    moodLabel.innerText = 'Mood: Please Login';
-                    return;
-                }
-
-                const response = await fetch(`${PET_SERVICE_URL}/api/pet/mood?userId=${userId}`);
-                const data = await response.json();
-
-                // Update label immediately
-                moodLabel.innerText = `Mood: ${data.mood}`;
-                updateBackground(data.mood);
-
-                // Dialogue trigger when mood changes to 'playing' OR on initial load if playing
-                if (data.mood === 'playing' && (currentMood !== 'playing' || isInitialLoad)) {
-                    showDialogue();
-                }
-
-                isInitialLoad = false;
-
-                if (data.mood !== currentMood) {
-                    currentMood = data.mood;
-                    // Update frame limits based on folder content
-                    if (currentMood === 'playing') totalFrames = 27;
-                    else totalFrames = 50;
-                    currentFrame = 1; // Reset animation on mood change
-                }
-            } catch (err) {
-                console.error("Failed to fetch mood:", err);
-                moodLabel.innerText = 'Mood: Offline';
-            }
-        }
-
-        function animate() {
-            // Capitalize first letter for internal folder structure
-            const folder = currentMood.charAt(0).toUpperCase() + currentMood.slice(1);
-            const fileName = `${folder} (${currentFrame}).png`;
-            spriteElement.src = `${PET_SERVICE_URL}/${folder}/${fileName}`;
-
-            currentFrame = (currentFrame % totalFrames) + 1;
-        }
-
-        // Update background color based on mood
-        // Modified to apply to the main content area or body, but respecting sidebar
-        function updateBackground(mood) {
-            const colors = {
-                happy: '#fff9c4',
-                bored: '#e0e0e0',
-                dirty: '#d7ccc8',
-                playing: '#b3e5fc'
-            };
-            // Apply to body is fine as sidebar sits on top with its own bg,
-            // BUT sidebar uses --bg-surface (white). 
-            // If we color body, it shows behind sidebar if sidebar is transparent? 
-            // Sidebar has background: var(--bg-surface) (white), so it's opaque.
-            // So coloring body is safe and effective for the main content area transparent background.
-            document.body.style.backgroundColor = colors[mood] || colors.happy;
-        }
-
-        function logout() {
-            localStorage.clear();
-            window.location.href = '/';
-        }
-
-        // Initial fetch
-        updateMood();
-        // Poll for mood changes every 5 seconds for more responsiveness
-        setInterval(updateMood, 5000);
-        // Animate frames
-        setInterval(animate, 100);
-    </script>
+    <script src="/js/pet-view.js"></script>
 </body>
 
 </html>

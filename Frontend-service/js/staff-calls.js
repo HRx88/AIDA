@@ -1,6 +1,6 @@
 // Staff Calls Dashboard JavaScript
-const VIDEO_SERVICE = 'http://localhost:5002/api/calls';
-const AUTH_SERVICE = 'http://localhost:5001/api/auth';
+const VIDEO_SERVICE = '/calls/api/calls';
+const AUTH_SERVICE = '/auth/api/auth';
 
 const token = localStorage.getItem('token');
 const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -220,7 +220,10 @@ async function markEmergencyAsMissed(callId) {
     try {
         await fetch(`${VIDEO_SERVICE}/${callId}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ status: 'cancelled', notes: 'Emergency call not answered after 3 attempts' })
         });
 
@@ -682,7 +685,10 @@ async function handleEditCallSubmit(e) {
     try {
         const response = await fetch(`${VIDEO_SERVICE}/${editingCallId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify(data)
         });
 
