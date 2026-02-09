@@ -1,12 +1,12 @@
-const express = require('express');
-const cors = require('cors');
 const path = require('path');
-
 // Load ROOT .env (shared across services)
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
+const express = require('express');
+const cors = require('cors');
+
 const app = express();
-const PORT = process.env.REWARD_SERVICE_PORT || 5004;
+const PORT = process.env.REWARD_SERVICE_PORT || 5007;
 
 // Middleware
 app.use(cors({
