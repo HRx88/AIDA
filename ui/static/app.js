@@ -202,6 +202,7 @@ async function initWakeUpPage() {
     if (speechEl) speechEl.textContent = "You’re all set for today!";
     if (iconEl) iconEl.textContent = "🎉";
     if (startBtn) startBtn.disabled = true;
+    await speakText("Good morning Charlie. You’re all set for today!");
     sessionStorage.removeItem("currentTaskId");
     return;
   }
@@ -211,6 +212,10 @@ async function initWakeUpPage() {
 
   // 6) If there IS a task -> update UI
   if (speechEl) speechEl.textContent = currentTask.title;
+  await sleep(200); // tiny delay so DOM updates
+  const wakeLine = `Good morning Charlie. Shall we begin with ${currentTask.title} today?`;
+  await speakText(wakeLine);
+
   if (taskEl) taskEl.textContent = currentTask.title;
   if (iconEl) iconEl.textContent = pickTaskVisuals(currentTask.title).icon;
 
@@ -413,6 +418,7 @@ async function initTaskTransitionPage() {
     if (nextTitleEl) nextTitleEl.textContent = "All done for today! 🎉";
     if (iconEl) iconEl.textContent = "🎉";
     if (speechEl) speechEl.textContent = "Awesome work. You’re finished for today!";
+    await speakText("Great job! You’re finished for today!");
     sessionStorage.removeItem("currentTaskId");
     return;
   }
@@ -421,6 +427,8 @@ async function initTaskTransitionPage() {
   if (nextTitleEl) nextTitleEl.textContent = nextTask.title;
   if (iconEl) iconEl.textContent = pickTaskVisuals(nextTask.title).icon;
   if (speechEl) speechEl.textContent = `Nice job! Next: ${nextTask.title}. Ready to start?`;
+  const line = `Nice job! Next: ${nextTask.title}. Ready to start?`;
+  await speakText(line);
 
   // 6) IMPORTANT: set the next task as the new current task
   sessionStorage.setItem("currentTaskId", String(nextTask.id));
@@ -512,6 +520,41 @@ async function speakText(text) {
     console.error(err);
     setStatus("TTS error. Check console.");
     return false;
+  }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Prevent repeating TTS every refresh
+function alreadySpoken(key) {
+  const v = sessionStorage.getItem(key);
+  if (v === "1") return true;
+  sessionStorage.setItem(key, "1");
+  return false;
+}
+
+// Speak a DOM element’s text after UI updates settle
+async function speakElementTextOnce({ key, selector, prefix = "", maxLen = 200 }) {
+  try {
+    if (alreadySpoken(key)) return;
+
+    // Wait a bit so initWakeUpPage/initTaskTransitionPage can set text
+    await sleep(450);
+
+    const el = document.querySelector(selector);
+    if (!el) return;
+
+    const raw = (el.textContent || "").trim();
+    if (!raw) return;
+
+    // Keep it short so it sounds clean
+    const text = (prefix + raw).slice(0, maxLen);
+
+    await speakText(text);
+  } catch (e) {
+    console.warn("Auto TTS failed:", e);
   }
 }
 
