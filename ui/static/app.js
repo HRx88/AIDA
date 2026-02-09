@@ -5,8 +5,23 @@
 const CALENDAR_API_BASE = "/calendar"; // keep empty so we can use relative URLs
 const CALENDAR_API = "/calendar/api"; // proxy route in Flask
 
-let nudgeTimer = null;
+
+
 let lastUserSpokeAt = 0;
+
+let nudgeTimeout = null;
+let nudgeCount = 0;
+let lastNudgeAt = 0;
+let isSpeaking = false;
+
+// tune knobs
+const NUDGE_CONFIG = {
+  firstDelayMs: 1500,          // speak soon after page load
+  minSilentBeforeFirstMs: 1500, // allow instant “hi” even if user didn’t speak
+  minGapMs: 25000,             // minimum time between nudges (25s)
+  maxGapMs: 45000,             // max time between nudges (45s)
+  maxPerSession: 4,            // cap to prevent token burn
+};
 
 // Temporary: hardcoded user id for testing (later you pull from login/session)
 const USER_ID = 2;
@@ -357,11 +372,15 @@ setAvatarMode("idle");*/
 
 // Task execution page: show the task you’re currently doing
 async function initTaskExecutionPage() {
+
+  stopProactiveNudges();
+  nudgeCount = 0;
+  lastNudgeAt = 0;
+
   startLiveClock("#currentTime");
 
   const taskId = Number(sessionStorage.getItem("currentTaskId"));
   if (!taskId) {
-    // fallback: pick first task today
     const data = await fetchTodayStatus(USER_ID, getTodaySG());
     const currentTask = pickCurrentTask(data.tasks);
     if (currentTask) sessionStorage.setItem("currentTaskId", String(currentTask.id));
@@ -370,22 +389,41 @@ async function initTaskExecutionPage() {
   const currentTaskId = Number(sessionStorage.getItem("currentTaskId"));
   if (!currentTaskId) return;
 
-  // Instead of creating a new backend endpoint, we can re-use todayStatus list
   const data = await fetchTodayStatus(USER_ID, getTodaySG());
   const currentTask = data.tasks.find(t => t.id === currentTaskId);
 
   const taskEl = $("#currentTaskTitle");
   if (taskEl) taskEl.textContent = currentTask ? currentTask.title : "Task";
 
-  // Dynamic avatar render (inject HTML into #aidaAvatar)
   if (currentTask) {
     renderAvatarForTask(currentTask.title);
   }
 
   const iconSmall = document.querySelector("#taskIconSmall");
-  if (iconSmall && currentTask) iconSmall.textContent = pickTaskVisuals(currentTask.title).icon;
+  if (iconSmall && currentTask) {
+    iconSmall.textContent = pickTaskVisuals(currentTask.title).icon;
+  }
 
-  lastUserSpokeAt = Date.now();
+  // ✅ SPEAK IMMEDIATELY (ONCE PER TASK)
+  const speakKey = `aida_exec_greet_${currentTaskId}`;
+  if (!alreadySpoken(speakKey)) {
+    await sleep(600); // allow DOM + avatar to render
+
+    const line = currentTask
+      ? `Okay Charlie. Let’s do ${currentTask.title}. I’m right here with you.`
+      : `Okay Charlie. I’m right here with you.`;
+
+    const aiEl = document.querySelector("#ai-text");
+    if (aiEl) aiEl.textContent = `AIDA: ${line}`;
+
+    await speakText(line);
+
+    // allow first proactive nudge soon if user stays quiet
+    lastUserSpokeAt = Date.now() - NUDGE_CONFIG.minSilentBeforeFirstMs;
+  }
+
+  
+  
   startProactiveNudges();
 }
 
@@ -492,12 +530,14 @@ async function getAiReply(userText) {
 
 async function speakText(text) {
   const statusEl = document.querySelector("#statusText");
+  const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
 
-  const setStatus = (msg) => {
-    if (statusEl) statusEl.textContent = msg;
-  };
+  // Prevent overlapping TTS spam
+  if (isSpeaking) return false;
+  if (!text || !text.trim()) return false;
 
   try {
+    isSpeaking = true;
     setStatus("Speaking…");
 
     const res = await fetch("/api/tts", {
@@ -506,20 +546,22 @@ async function speakText(text) {
       body: JSON.stringify({ text })
     });
 
-    const data = await res.json();
+    const data = await res.json();   // ✅ moved up
 
     if (!data.ok) {
-      setStatus("TTS failed.");
+      setStatus(data.error || "TTS unavailable.");
       return false;
     }
 
-    setStatus("Ready to speak…");
+    setStatus("Ready.");
     return true;
 
   } catch (err) {
     console.error(err);
     setStatus("TTS error. Check console.");
     return false;
+  } finally {
+    isSpeaking = false;
   }
 }
 
@@ -592,46 +634,97 @@ async function getAiNudge() {
   }
 }
 
-function startProactiveNudges() {
-  if (nudgeTimer) clearInterval(nudgeTimer);
+function stopProactiveNudges() {
+  if (nudgeTimeout) clearTimeout(nudgeTimeout);
+  nudgeTimeout = null;
+}
 
-  nudgeTimer = setInterval(async () => {
+window.addEventListener("beforeunload", () => {
+  if (typeof stopProactiveNudges === "function") stopProactiveNudges();
+});
+
+
+function scheduleNextNudge(delayMs) {
+  stopProactiveNudges();
+  nudgeTimeout = setTimeout(async () => {
     const now = Date.now();
 
-    // Only nudge if user hasn't spoken for ~25s
-    if (now - lastUserSpokeAt < 25000) return;
+    // Stop after cap
+    if (nudgeCount >= NUDGE_CONFIG.maxPerSession) return;
 
-    // Don’t interrupt if mic is disabled/recording
+    // Don’t interrupt if mic disabled/recording
     const micBtn = document.querySelector(".mic-button");
-    if (micBtn && micBtn.disabled) return;
+    if (micBtn && micBtn.disabled) {
+      // reschedule a bit later
+      return scheduleNextNudge(8000);
+    }
 
-    await getAiNudge();
-    lastUserSpokeAt = Date.now(); // reset so it doesn't spam
-  }, 8000); // checks every 8s
+    // Don’t speak over itself
+    if (isSpeaking) {
+      return scheduleNextNudge(6000);
+    }
+
+    // Require some idle time since user last spoke
+    const idleMs = now - lastUserSpokeAt;
+
+    // For first nudge, allow quick start; after that, require proper silence
+    const neededSilence = (nudgeCount === 0)
+      ? NUDGE_CONFIG.minSilentBeforeFirstMs
+      : NUDGE_CONFIG.minGapMs;
+
+    if (idleMs < neededSilence) {
+      // user recently spoke; try again soon
+      return scheduleNextNudge(8000);
+    }
+
+    // Also ensure gap between nudges
+    if (lastNudgeAt && (now - lastNudgeAt < NUDGE_CONFIG.minGapMs)) {
+      return scheduleNextNudge(8000);
+    }
+
+    // Do the nudge
+    const reply = await getAiNudge();
+    if (reply) {
+      nudgeCount += 1;
+      lastNudgeAt = Date.now();
+      lastUserSpokeAt = Date.now(); // prevents immediate follow-up spam
+    }
+
+    // Schedule next nudge with randomness
+    const nextDelay = NUDGE_CONFIG.minGapMs +
+      Math.floor(Math.random() * (NUDGE_CONFIG.maxGapMs - NUDGE_CONFIG.minGapMs));
+
+    scheduleNextNudge(nextDelay);
+
+  }, delayMs);
+}
+
+function startProactiveNudges() {
+  nudgeCount = 0;
+  lastNudgeAt = 0;
+  scheduleNextNudge(NUDGE_CONFIG.firstDelayMs);
 }
 
 async function sttOnce() {
   const micBtn = document.querySelector(".mic-button");
   if (!micBtn) return;
 
-  // NEW: elements for UI feedback
   const statusEl = document.querySelector("#statusText");
   const userEl = document.querySelector("#userText");
 
-  const setStatus = (msg) => {
-    if (statusEl) statusEl.textContent = msg;
-  };
-
-  const setUserText = (msg) => {
-    if (userEl) userEl.textContent = msg;
-  };
+  const setStatus = (msg) => { if (statusEl) statusEl.textContent = msg; };
+  const setUserText = (msg) => { if (userEl) userEl.textContent = msg; };
 
   try {
+    // ✅ stop nudges while user is interacting
+    stopProactiveNudges();
+
     micBtn.disabled = true;
     micBtn.classList.add("recording");
 
+    setAvatarMode?.("listening");
     setStatus("Listening…");
-    setUserText(""); // clear previous transcript (optional)
+    setUserText("");
 
     const res = await fetch("/api/stt_once", {
       method: "POST",
@@ -639,36 +732,46 @@ async function sttOnce() {
       body: JSON.stringify({ phrase_time_limit: 30 })
     });
 
+    setAvatarMode?.("thinking");
     setStatus("Transcribing…");
 
     const data = await res.json();
 
     if (!data.ok || !data.text) {
       setStatus("I didn’t catch that. Try again.");
+      // ✅ user interacted, so reset timer and re-enable nudges
+      lastUserSpokeAt = Date.now();
+      startProactiveNudges();
       return;
     }
 
+    // user just spoke
     lastUserSpokeAt = Date.now();
-
-    // Show transcript on the page
     setUserText(`You said: ${data.text}`);
-   
-
-    // Keep this for debugging (optional)
     console.log("User said:", data.text);
 
-    // NEW: Get AI reply
+    // AI reply
     const aiReply = await getAiReply(data.text);
     if (aiReply) {
-      speakText(aiReply);
+      setAvatarMode?.("speaking");
+      await speakText(aiReply);
+      // ✅ reset idle AFTER reply finishes (prevents instant nudge)
+      lastUserSpokeAt = Date.now();
     }
+
+    setAvatarMode?.("idle");
+    startProactiveNudges();
 
   } catch (err) {
     console.error(err);
     setStatus("STT error. Check console.");
+    // still restart nudges after error
+    lastUserSpokeAt = Date.now();
+    startProactiveNudges();
   } finally {
     micBtn.disabled = false;
     micBtn.classList.remove("recording");
+    setAvatarMode?.("idle");
   }
 }
 
@@ -748,7 +851,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         setStatus("Great job! ✅");
 
         //  stop proactive nudges
-        if (nudgeTimer) clearInterval(nudgeTimer);
+        stopProactiveNudges();
+
 
         window.location.href = "/task-transition";
       } catch (err) {
