@@ -16,8 +16,14 @@ else:
 app = Flask(__name__)
 CORS(app)  # Allow cross-origin from Docker containers
 
-# Calibrate once at startup
-calibrate_microphone()
+# Calibrate once at startup (skip gracefully if no mic connected)
+HAS_MIC = False
+try:
+    calibrate_microphone()
+    HAS_MIC = True
+    print("[voice] Microphone calibrated OK")
+except Exception as e:
+    print(f"[voice] No microphone found — STT disabled ({e})")
 
 # Prevent overlapping TTS calls (pyttsx3 can glitch if called concurrently)
 tts_lock = Lock()
