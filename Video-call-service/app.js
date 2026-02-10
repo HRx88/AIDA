@@ -1,7 +1,12 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config({ path: '../.env' });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
+// Set default timezone to Singapore for consistent date handling
+process.env.TZ = 'Asia/Singapore';
+
+const CallModel = require('./models/callModel');
 const app = express();
 const PORT = process.env.VIDEO_SERVICE_PORT || 5002;
 
@@ -23,6 +28,11 @@ app.get('/health', (req, res) => {
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Video Call Service (API) running on http://0.0.0.0:${PORT}`);
+
+    // Start auto-expiry background task (runs every 1 minute)
+    setInterval(() => {
+        CallModel.autoExpireStaleCalls().catch(err => console.error('[Auto-Expiry Error]', err));
+    }, 60000);
 });
 
 module.exports = app;

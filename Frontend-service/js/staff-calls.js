@@ -11,10 +11,16 @@ if (!token || !currentUser || (currentUser.role !== 'staff' && currentUser.role 
 let currentIncomingCall = null;
 let ringtone = null;
 let editingCallId = null;
+let activeCallId = null; // Track the call currently being attended
 
 const MAX_EMERGENCY_ATTEMPTS = 3;
 
 // Track emergency notification attempts (persists across page refresh)
+function getAvatarUrl(path) {
+    if (!path) return null;
+    return path.startsWith('http') ? path : `/auth${path}`;
+}
+
 function getEmergencyAttempts() {
     const stored = localStorage.getItem('emergencyAttempts');
     return stored ? JSON.parse(stored) : {};
@@ -250,6 +256,17 @@ function showIncomingCallNotification(call) {
     document.getElementById('callerName').textContent = call.client_name || 'Client';
     document.getElementById('callReason').textContent = `Reason: ${call.emergency_reason || 'Needs assistance'}`;
 
+    // Set avatar image
+    const avatarImg = document.getElementById('callerAvatar');
+    if (avatarImg) {
+        if (call.profile_image_url) {
+            avatarImg.src = getAvatarUrl(call.profile_image_url);
+            avatarImg.classList.remove('hidden');
+        } else {
+            avatarImg.classList.add('hidden');
+        }
+    }
+
     // Show modal
     const modal = document.getElementById('incomingCallModal');
     if (modal) modal.classList.remove('hidden');
@@ -314,8 +331,11 @@ function renderEmergencies(calls) {
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div class="flex-1">
                     <div class="flex items-center space-x-3 mb-2">
-                        <div class="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 animate-pulse">
-                            <i class="fa-solid fa-tower-broadcast"></i>
+                        <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-rose-200 shadow-sm relative flex items-center justify-center bg-rose-100">
+                            <i class="fa-solid fa-user text-rose-600"></i>
+                            ${call.profile_image_url ?
+            `<img src="${getAvatarUrl(call.profile_image_url)}" class="absolute inset-0 w-full h-full object-cover z-10" onerror="this.style.display='none'">` : ''
+        }
                         </div>
                         <h3 class="text-xl font-black text-rose-600 uppercase tracking-tight">
                             Urgent: ${call.client_name || 'Client #' + call.client_id}
@@ -369,8 +389,11 @@ function renderScheduled(calls) {
         <div class="card flex flex-col justify-between hover:shadow-md h-full ${badgeText === 'Overdue' ? 'border-rose-100 bg-rose-50/10' : ''}">
             <div>
                 <div class="flex justify-between items-start mb-4">
-                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
-                        <i class="fa-solid fa-user"></i>
+                    <div class="w-12 h-12 rounded-lg overflow-hidden border border-blue-100 shadow-sm relative flex items-center justify-center bg-blue-50">
+                        <i class="fa-solid fa-user text-blue-600"></i>
+                        ${call.profile_image_url ?
+                `<img src="${getAvatarUrl(call.profile_image_url)}" class="absolute inset-0 w-full h-full object-cover z-10" onerror="this.style.display='none'">` : ''
+            }
                     </div>
                     <span class="badge ${badgeClass}">
                         ${badgeText}
@@ -380,12 +403,12 @@ function renderScheduled(calls) {
                 <p class="text-sm text-slate-500 flex items-center mb-4">
                     <i class="fa-solid fa-calendar-day mr-2 opacity-50"></i>
                     ${new Date(call.scheduled_time).toLocaleString('en-SG', {
-            weekday: 'short',
-            day: 'numeric',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit'
-        })}
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            })}
                 </p>
                 <div class="bg-slate-50 p-3 rounded-lg text-sm text-slate-600 mb-6 italic">
                     "${call.notes || 'No specific notes for this session'}"
@@ -397,7 +420,7 @@ function renderScheduled(calls) {
                     class="flex-1 bg-slate-900 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-slate-800 transition-all">
                     ${badgeText === 'Live Now' ? 'Join' : 'Start'} Call
                 </button>
-                <button onclick="openEditModal(${call.id}, ${call.client_id}, '${call.scheduled_time}', '${(call.notes || '').replace(/'/g, "\\'")}')" 
+                <button onclick="openEditModal(${call.id}, ${call.client_id}, '${call.scheduled_time}', '${(call.notes || '').replace(/'/g, "\\'").replace(/\n/g, "\\n").replace(/\r/g, "")}')" 
                     class="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </button>
@@ -426,8 +449,11 @@ function renderEmergencyHistory(calls) {
         <div class="card p-4 hover:border-slate-300 transition-all">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-4">
-                    <div class="w-10 h-10 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center text-lg">
-                        <i class="fa-solid fa-ambulance"></i>
+                    <div class="w-12 h-12 rounded-lg overflow-hidden border border-slate-100 relative flex items-center justify-center bg-slate-50">
+                        <i class="fa-solid fa-user text-slate-400"></i>
+                        ${call.profile_image_url ?
+            `<img src="${getAvatarUrl(call.profile_image_url)}" class="absolute inset-0 w-full h-full object-cover z-10" onerror="this.style.display='none'">` : ''
+        }
                     </div>
                     <div>
                         <h4 class="font-bold text-slate-900">${call.client_name || 'Client #' + call.client_id}</h4>
@@ -459,8 +485,11 @@ function renderHistory(calls) {
         <div class="card p-4 hover:bg-slate-50/50 transition-all">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-4">
-                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
-                        <i class="fa-solid fa-user-check"></i>
+                    <div class="w-12 h-12 rounded-lg overflow-hidden border border-slate-100 relative flex items-center justify-center bg-slate-50">
+                        <i class="fa-solid fa-user text-slate-400"></i>
+                        ${call.profile_image_url ?
+            `<img src="${getAvatarUrl(call.profile_image_url)}" class="absolute inset-0 w-full h-full object-cover z-10" onerror="this.style.display='none'">` : ''
+        }
                     </div>
                     <div>
                         <h3 class="font-bold text-slate-900">${call.client_name || 'Client #' + call.client_id}</h3>
@@ -493,10 +522,12 @@ async function startCall(callId, hostUrl) {
         });
 
         // Join the call
+        activeCallId = callId;
         joinCall(hostUrl);
     } catch (err) {
         console.error('Error starting call:', err);
         // Still try to join even if status update fails
+        activeCallId = callId;
         joinCall(hostUrl);
     }
 }
@@ -505,6 +536,7 @@ async function answerEmergencyCall(callId, hostUrl) {
     if (ringtone) ringtone.pause();
     try {
         // Mark as active so the client knows help is on the way
+        activeCallId = callId;
         await fetch(`${VIDEO_SERVICE}/${callId}/status`, {
             method: 'PATCH',
             headers: {
@@ -529,6 +561,44 @@ function joinCall(url) {
 function closeCallModal() {
     document.getElementById('callModal').classList.add('hidden');
     document.getElementById('wherebyFrame').src = '';
+
+    // Show outcome modal if we have an active call
+    if (activeCallId) {
+        document.getElementById('outcomeModal').classList.remove('hidden');
+    } else {
+        loadCalls();
+    }
+}
+
+async function recordOutcome(status) {
+    if (!activeCallId) return;
+
+    try {
+        const response = await fetch(`${VIDEO_SERVICE}/${activeCallId}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                status: status,
+                notes: status === 'cancelled' ? 'Session ended - marked as missed by staff.' : 'Session completed successfully.'
+            })
+        });
+
+        if (response.ok) {
+            showToast(`Session marked as ${status === 'cancelled' ? 'missed' : 'completed'}.`, 'success');
+        }
+    } catch (err) {
+        console.error('Error recording outcome:', err);
+    } finally {
+        closeOutcomeModal();
+    }
+}
+
+function closeOutcomeModal() {
+    document.getElementById('outcomeModal').classList.add('hidden');
+    activeCallId = null;
     loadCalls();
 }
 

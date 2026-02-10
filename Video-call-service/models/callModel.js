@@ -16,7 +16,7 @@ const create = async (callData) => {
 // Find calls by staff ID (includes urgent emergencies)
 const findByStaffId = async (staffId) => {
     const result = await db.query(
-        `SELECT vc.*, u.full_name as client_name 
+        `SELECT vc.*, u.full_name as client_name, u.profile_image_url 
          FROM video_calls vc
          LEFT JOIN users u ON vc.client_id = u.id
          WHERE vc.staff_id = $1 OR vc.call_type = 'emergency'
@@ -84,6 +84,31 @@ const deleteCall = async (callId) => {
     return result.rows[0] || null;
 };
 
+// Auto-expire stale calls (older than 2 hours and still scheduled/active/urgent)
+const autoExpireStaleCalls = async () => {
+    // Note: We use 'Asia/Singapore' timezone as the base since user is in SG (+08:00)
+    // and times are stored as TIMESTAMP without timezone (effectively local time)
+    const EXPIRY_INTERVAL = '2 hours';
+
+    const result = await db.query(
+        `UPDATE video_calls 
+         SET status = 'cancelled', 
+             notes = COALESCE(notes || ' [System: Auto-cancelled due to timeout]', '[System: Auto-cancelled due to timeout]'),
+             updated_at = NOW()
+         WHERE (status IN ('scheduled', 'active', 'urgent'))
+           AND (
+               (call_type = 'checkin' AND scheduled_time < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Singapore') - INTERVAL '${EXPIRY_INTERVAL}')
+               OR 
+               (call_type = 'emergency' AND created_at < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Singapore') - INTERVAL '${EXPIRY_INTERVAL}')
+           )
+         RETURNING id`
+    );
+    if (result.rowCount > 0) {
+        console.log(`[Auto-Expiry] Cancelled ${result.rowCount} stale calls:`, result.rows.map(r => r.id));
+    }
+    return result.rowCount;
+};
+
 module.exports = {
     create,
     findByStaffId,
@@ -91,5 +116,6 @@ module.exports = {
     updateStatus,
     findById,
     update,
-    delete: deleteCall
+    delete: deleteCall,
+    autoExpireStaleCalls
 };
