@@ -283,6 +283,22 @@ const getCallById = async (req, res) => {
     }
 };
 
+/**
+ * Manually trigger cleanup of stale calls
+ */
+const cleanupStaleCalls = async (req, res) => {
+    try {
+        const count = await Call.autoExpireStaleCalls();
+        res.json({
+            message: 'Cleanup completed successfully',
+            cancelled_count: count
+        });
+    } catch (err) {
+        console.error('Error during call cleanup:', err);
+        res.status(500).json({ message: 'Failed to run cleanup' });
+    }
+};
+
 module.exports = {
     createCheckInCall,
     createEmergencyCall,
@@ -291,5 +307,6 @@ module.exports = {
     getCallById,
     updateCallStatus,
     updateCall,
-    deleteCall
+    deleteCall,
+    cleanupStaleCalls
 };

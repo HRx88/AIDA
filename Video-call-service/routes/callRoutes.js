@@ -20,6 +20,9 @@ router.patch('/:callId/status', callController.updateCallStatus);
 // Update call details
 router.put('/:callId', callController.updateCall);
 
+// Cleanup stale calls (Admin/Staff)
+router.post('/cleanup', callController.cleanupStaleCalls);
+
 // Get single call by ID
 router.get('/:callId', callController.getCallById);
 

@@ -205,8 +205,10 @@
             <div class="caller-avatar-container mx-auto">
                 <div class="wave-animation"></div>
                 <div class="wave-animation" style="animation-delay: 0.5s"></div>
-                <div class="caller-avatar">
+                <div class="caller-avatar overflow-hidden relative flex items-center justify-center">
                     <i class="fa-solid fa-user-shield"></i>
+                    <img id="callerAvatar" src="" class="absolute inset-0 w-full h-full object-cover z-10 hidden"
+                        onerror="this.style.display='none'">
                 </div>
             </div>
 
@@ -296,6 +298,35 @@
         </div>
         <iframe id="wherebyFrame" src="" allow="camera; microphone; fullscreen; display-capture"
             class="flex-1 w-full border-none"></iframe>
+    </div>
+
+    <!-- Outcome Modal (shown after call ends) -->
+    <div id="outcomeModal" class="hidden modal-overlay z-[3000]">
+        <div class="modal-content animate-in max-w-sm text-center">
+            <div
+                class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
+                <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+            <h3 class="text-2xl font-black mb-2">Session Outcome</h3>
+            <p class="text-slate-500 mb-8">How would you like to record this session?</p>
+
+            <div class="space-y-3">
+                <button onclick="recordOutcome('completed')"
+                    class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-4 rounded-xl font-bold flex items-center justify-center space-x-3 transition-all">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span>Mark as Completed</span>
+                </button>
+                <button onclick="recordOutcome('cancelled')"
+                    class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-4 rounded-xl font-bold flex items-center justify-center space-x-3 transition-all">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Mark as Missed</span>
+                </button>
+                <button onclick="closeOutcomeModal()"
+                    class="w-full py-2 text-slate-400 text-sm hover:text-slate-600 transition-all">
+                    Decide Later
+                </button>
+            </div>
+        </div>
     </div>
 
     <audio id="ringtone" loop>
