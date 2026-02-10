@@ -36,6 +36,10 @@ Motivation rules:
 - Avoid generic motivational quotes.
 - Keep motivation short and practical.
 
+Name rules:
+- The user's name will be provided in the context. Use ONLY that name.
+- NEVER make up or guess a name. If no name is given, say "Friend".
+
 Nudge rules:
 - When nudging, do not repeat previous instructions.
 - Offer ONE small next step or reminder.
@@ -64,7 +68,7 @@ class AIResponder:
     def set_task(self, task: str):
         self.current_task = task    #stores task user is currently doing for AI to reference
 
-    def respond(self,user_text: str,task_title: str | None = None,task_action: str | None = None,intent: str = "unknown",mode: str = "reply") -> str:
+    def respond(self,user_text: str,task_title: str | None = None,task_action: str | None = None,intent: str = "unknown",mode: str = "reply",user_name: str = "Friend") -> str:
         user_text = (user_text or "").strip()  #handle empty input
         if not user_text:
             return "I didn’t catch that. Can you say it again?" #no API call wasted on empty input
@@ -76,6 +80,7 @@ class AIResponder:
         task_title = (task_title or self.current_task).strip()
 
         task_hint = (
+            f"The user's name is: {user_name}\n"
             f"Current task title: {task_title}\n"
             f"Current task type: {task_action or 'unknown'}\n"
             f"User intent: {intent}\n"
@@ -113,13 +118,14 @@ class AIResponder:
 
         return ai_text
     
-    def nudge(self, task_title: str, task_action: str | None = None) -> str:
+    def nudge(self, task_title: str, task_action: str | None = None, user_name: str = "Friend") -> str:
         return self.respond(
             user_text="(no user message)",
             task_title=task_title,
             task_action=task_action,
             intent="nudge",
-            mode="nudge"
+            mode="nudge",
+            user_name=user_name
         )
 
 '''Things i feel are missing:

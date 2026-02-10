@@ -105,6 +105,7 @@ def api_ai_reply():
     session_id  = request.json.get("sessionId") or "default"
     task_title  = request.json.get("taskTitle")
     task_action = request.json.get("taskAction")
+    user_name   = request.json.get("userName") or "Friend"
 
     if not user_text:
         return jsonify({"ok": False, "error": "Missing 'text'"}), 400
@@ -117,7 +118,8 @@ def api_ai_reply():
         task_title=task_title,
         task_action=task_action,
         intent=intent,
-        mode="reply"
+        mode="reply",
+        user_name=user_name
     )
 
     return jsonify({"ok": True, "reply": ai_text, "intent": intent,
@@ -131,9 +133,10 @@ def api_ai_nudge():
     session_id  = request.json.get("sessionId") or "default"
     task_title  = request.json.get("taskTitle") or "Task"
     task_action = request.json.get("taskAction")
+    user_name   = request.json.get("userName") or "Friend"
 
     brain   = get_brain(session_id, task_title)
-    ai_text = brain.nudge(task_title=task_title, task_action=task_action)
+    ai_text = brain.nudge(task_title=task_title, task_action=task_action, user_name=user_name)
     return jsonify({"ok": True, "reply": ai_text}), 200
 
 # ── UI page routes ──────────────────────────────────────────────────
