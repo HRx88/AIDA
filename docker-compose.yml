@@ -11,7 +11,7 @@ services:
       - CALENDAR_SERVICE_PORT=5003
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:5003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: [ "CMD", "node", "-e", "fetch('http://localhost:5003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -28,7 +28,7 @@ services:
       - AUTH_SERVICE_PORT=5006
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:5006/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: [ "CMD", "node", "-e", "fetch('http://localhost:5006/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -45,7 +45,7 @@ services:
       - VIDEO_SERVICE_PORT=5002
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:5002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: [ "CMD", "node", "-e", "fetch('http://localhost:5002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -63,7 +63,7 @@ services:
       - NODE_ENV=production
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:5004/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: [ "CMD", "node", "-e", "fetch('http://localhost:5004/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -92,3 +92,27 @@ services:
       pet-service:
         condition: service_healthy
     restart: unless-stopped
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: AI-service/Dockerfile
+    ports:
+      - "5010:5010"
+    env_file:
+      - ./.env
+    environment:
+      - AI_SERVICE_PORT=5010
+      - CALENDAR_BASE_URL=http://calendar-service:5003
+      - VOICE_SERVER_URL=http://host.docker.internal:5000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      calendar-service:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5010/health')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10

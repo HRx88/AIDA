@@ -23,8 +23,42 @@ const NUDGE_CONFIG = {
   maxPerSession: 4,            // cap to prevent token burn
 };
 
-// Temporary: hardcoded user id for testing (later you pull from login/session)
-const USER_ID = 2;
+// Dynamic user ID from auth
+// On first visit from calendar-dashboard, user data comes via URL params.
+// We persist it to localStorage so subsequent pages (task, transition) can use it.
+(function syncUserFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const urlUserId = params.get('userId');
+  const urlFullName = params.get('fullName');
+  const urlToken = params.get('token');
+  if (urlUserId) {
+    // Store for use by this origin (port 5010)
+    const userData = { id: Number(urlUserId), fullName: urlFullName || 'Friend' };
+    localStorage.setItem('user', JSON.stringify(userData));
+    if (urlToken) localStorage.setItem('token', urlToken);
+    // Clean URL (remove params without reload)
+    const cleanUrl = window.location.pathname;
+    window.history.replaceState({}, '', cleanUrl);
+  }
+})();
+
+function getUserId() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user && user.id) return user.id;
+  } catch (e) { }
+  console.warn('No user ID found. Is the user logged in?');
+  return null;
+}
+
+function getUserFullName() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user && user.fullName) return user.fullName;
+    if (user && user.username) return user.username;
+  } catch (e) { }
+  return 'Friend';
+}
 
 const ACTION_RULES = [
   { keywords: ["brush", "teeth"], icon: "🦷", action: "hygiene_brush" },
@@ -73,7 +107,7 @@ async function getCurrentTaskContext() {
   let taskAction = "idle";
 
   if (currentTaskId) {
-    const data = await fetchTodayStatus(USER_ID, getTodaySG());
+    const data = await fetchTodayStatus(getUserId(), getTodaySG());
     const t = data.tasks.find(x => x.id === currentTaskId);
     if (t?.title) taskTitle = t.title;
   }
@@ -108,10 +142,17 @@ function formatTimeHHMM(dateObj) {
 }
 
 // ===== API Calls =====
+function getAuthHeaders() {
+  const token = localStorage.getItem('token');
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
 async function fetchTodayStatus(userId, dateStr) {
   // This hits calendar-service taskLogController.getTodayStatus
   const url = `${CALENDAR_API}/logs/today/${userId}?date=${encodeURIComponent(dateStr)}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: getAuthHeaders() });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`fetchTodayStatus failed: ${res.status} ${text}`);
@@ -136,7 +177,7 @@ function pickCurrentTask(tasksWithStatus) {
   const sg = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Singapore" }));
   const nowHHMM = formatTimeHHMM(sg);
 
-  const upcoming = pending.find(t => (t.time_slot || "99:99").slice(0,5) >= nowHHMM);
+  const upcoming = pending.find(t => (t.time_slot || "99:99").slice(0, 5) >= nowHHMM);
   return upcoming || pending[0]; // fallback: earliest pending
 }
 
@@ -193,13 +234,13 @@ async function initWakeUpPage() {
   // 1) Always show live clock
   startLiveClock("#currentTime");
 
-  // 2) Always show name (even if no tasks)
+  // 2) Always show name from auth login data
   const nameEl = $("#userName");
-  if (nameEl) nameEl.textContent = "Charlie"; // later: pull from DB/login
+  if (nameEl) nameEl.textContent = getUserFullName();
 
   // 3) Fetch schedule
   const dateStr = getTodaySG();
-  const data = await fetchTodayStatus(USER_ID, dateStr);
+  const data = await fetchTodayStatus(getUserId(), dateStr);
 
   // 4) Pick current task (first pending)
   const currentTask = pickCurrentTask(data.tasks);
@@ -228,7 +269,7 @@ async function initWakeUpPage() {
   // 6) If there IS a task -> update UI
   if (speechEl) speechEl.textContent = currentTask.title;
   await sleep(200); // tiny delay so DOM updates
-  const wakeLine = `Good morning Charlie. Shall we begin with ${currentTask.title} today?`;
+  const wakeLine = `Good morning ${getUserFullName()}. Shall we begin with ${currentTask.title} today?`;
   await speakText(wakeLine);
 
   if (taskEl) taskEl.textContent = currentTask.title;
@@ -356,7 +397,7 @@ function renderAvatarForTask(taskTitle = "") {
   avatar.dataset.action = action || "idle";
 }
 
-function setAvatarMode(mode){
+function setAvatarMode(mode) {
   const avatar = document.querySelector("#aidaAvatar");
   if (avatar) avatar.dataset.mode = mode;
 }
@@ -381,7 +422,7 @@ async function initTaskExecutionPage() {
 
   const taskId = Number(sessionStorage.getItem("currentTaskId"));
   if (!taskId) {
-    const data = await fetchTodayStatus(USER_ID, getTodaySG());
+    const data = await fetchTodayStatus(getUserId(), getTodaySG());
     const currentTask = pickCurrentTask(data.tasks);
     if (currentTask) sessionStorage.setItem("currentTaskId", String(currentTask.id));
   }
@@ -389,7 +430,7 @@ async function initTaskExecutionPage() {
   const currentTaskId = Number(sessionStorage.getItem("currentTaskId"));
   if (!currentTaskId) return;
 
-  const data = await fetchTodayStatus(USER_ID, getTodaySG());
+  const data = await fetchTodayStatus(getUserId(), getTodaySG());
   const currentTask = data.tasks.find(t => t.id === currentTaskId);
 
   const taskEl = $("#currentTaskTitle");
@@ -422,8 +463,8 @@ async function initTaskExecutionPage() {
     lastUserSpokeAt = Date.now() - NUDGE_CONFIG.minSilentBeforeFirstMs;
   }
 
-  
-  
+
+
   startProactiveNudges();
 }
 
@@ -443,7 +484,7 @@ async function initTaskTransitionPage() {
   if (subtitleEl) subtitleEl.textContent = "Keep up the awesome work!";
 
   // 1) Fetch today tasks
-  const data = await fetchTodayStatus(USER_ID, getTodaySG());
+  const data = await fetchTodayStatus(getUserId(), getTodaySG());
 
   // 2) We should have set this before redirecting here
   const completedTaskId = Number(sessionStorage.getItem("completedTaskId"));
@@ -479,7 +520,7 @@ async function initTaskTransitionPage() {
 
 async function getAiReply(userText) {
 
-  
+
   // UI elements we will update
   const statusEl = document.querySelector("#statusText");
   const aiEl = document.querySelector("#ai-text"); // <-- you must have this in HTML
@@ -781,10 +822,10 @@ async function completeCurrentTask() {
 
   const res = await fetch(`${CALENDAR_API}/logs/complete`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     body: JSON.stringify({
       taskId,
-      userId: USER_ID,
+      userId: getUserId(),
       // scheduledDate optional; calendar-service will default to SG date anyway
       scheduledDate: getTodaySG(),
       notes: ""
@@ -841,7 +882,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       try {
         setStatus("Saving…");
-        const data = await fetchTodayStatus(USER_ID, getTodaySG());
+        const data = await fetchTodayStatus(getUserId(), getTodaySG());
         const completedTaskId = Number(sessionStorage.getItem("currentTaskId"));
         const completedTask = data.tasks.find(t => t.id === completedTaskId);
 
@@ -861,7 +902,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
   }
-  
+
 });
 
 
