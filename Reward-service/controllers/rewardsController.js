@@ -6,6 +6,7 @@ exports.list = async (req, res) => {
     const items = await Rewards.listActiveRewards();
     res.json(items);
   } catch (err) {
+    console.error('[REWARDS] listActiveRewards error:', err);
     res.status(500).json({ message: 'Failed to load rewards', details: err.message });
   }
 };
@@ -39,6 +40,7 @@ exports.myHistory = async (req, res) => {
     const rows = await Rewards.getMyRedemptions(userId);
     res.json(rows);
   } catch (err) {
+    console.error('[REWARDS] getMyRedemptions error:', err);
     res.status(500).json({ message: 'Failed to load redemption history', details: err.message });
   }
 };

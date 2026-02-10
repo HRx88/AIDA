@@ -10,7 +10,10 @@ function authenticateJWT(req, res, next) {
     if (!token) return res.status(401).json({ message: "Missing token" });
 
     const secret = process.env.JWT_SECRET;
-    if (!secret) return res.status(500).json({ message: "JWT_SECRET not set in .env" });
+    if (!secret) {
+      console.error('[AUTH] Critical: JWT_SECRET is not defined in process.env');
+      return res.status(500).json({ message: "JWT_SECRET not set in .env" });
+    }
 
     const decoded = jwt.verify(token, secret);
 

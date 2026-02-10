@@ -1,36 +1,11 @@
-// Frontend-service/js/rewards.js
+const REWARD_SERVICE_URL = "/rewards/api/rewards";
+const CALENDAR_SERVICE_URL = "/calendar/api/points";
 
-const REWARD_SERVICE_URL = "http://localhost:5004/api/rewards";
-const CALENDAR_SERVICE_URL = "http://localhost:5003/api/points";
+const token = localStorage.getItem("token");
+const currentUser = JSON.parse(localStorage.getItem("user") || "null");
 
-// ---------------- Auth helpers ----------------
-function getToken() {
-  return localStorage.getItem("token");
-}
-
-function getUser() {
-  try {
-    return JSON.parse(localStorage.getItem("user") || "null");
-  } catch {
-    return null;
-  }
-}
-
-// Redirect + clear on expired/invalid session
-function logoutAndRedirect(message = "Session expired. Please login again.") {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  showToast(message, "warning");
-  setTimeout(() => (window.location.href = "/"), 800);
-}
-
-function authHeaders() {
-  const token = getToken();
-  if (!token) throw new Error("Missing token. Please login again.");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
+if (!token || !currentUser) {
+  window.location.href = "/";
 }
 
 // ---------------- UI helpers ----------------
@@ -92,22 +67,11 @@ const postalCodeEl = document.getElementById("postalCode");
 
 const confirmRedeemBtn = document.getElementById("confirmRedeemBtn");
 
-// ---------------- Auth guard ----------------
-function ensureLoggedIn() {
-  const token = getToken();
-  const user = getUser();
-  if (!token || !user) {
-    showToast("Please login first.", "warning");
-    window.location.href = "/";
-    return false;
-  }
-  return true;
-}
+// No explicit guard function needed as it's at the top level now
 
 // ---------------- API calls ----------------
 async function loadPoints() {
-  const user = getUser();
-  const userId = user?.id ?? user?.userId;
+  const userId = currentUser?.id ?? currentUser?.userId;
 
   if (!userId) {
     pointsBalanceEl.textContent = "—";
@@ -115,108 +79,116 @@ async function loadPoints() {
     return;
   }
 
-  let res;
   try {
-    res = await fetch(`${CALENDAR_SERVICE_URL}/${userId}`, {
-      headers: authHeaders(),
+    const res = await fetch(`${CALENDAR_SERVICE_URL}/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/";
+      return;
+    }
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      pointsBalanceEl.textContent = "—";
+      showToast(data.message || "Failed to load points.", "error");
+      return;
+    }
+
+    const total = data.total_points ?? data.total ?? data.totalPoints ?? 0;
+    pointsBalanceEl.textContent = total;
   } catch (e) {
     pointsBalanceEl.textContent = "—";
     showToast("Failed to reach Calendar service.", "error");
-    return;
   }
-
-  if (res.status === 401 || res.status === 403) {
-    logoutAndRedirect();
-    return;
-  }
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    pointsBalanceEl.textContent = "—";
-    showToast(data.message || "Failed to load points.", "error");
-    return;
-  }
-
-  const total = data.total_points ?? data.total ?? data.totalPoints ?? 0;
-  pointsBalanceEl.textContent = total;
 }
 
 async function loadRewards() {
-  let res;
   try {
-    res = await fetch(`${REWARD_SERVICE_URL}/items`, {
-      headers: authHeaders(),
+    const res = await fetch(`${REWARD_SERVICE_URL}/items`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/";
+      return;
+    }
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (rewardsGridEl) rewardsGridEl.innerHTML = "";
+      const msg = data.details
+        ? `${data.message} (${data.details})`
+        : data.message || "Failed to load rewards.";
+      showToast(msg, "error");
+      return;
+    }
+
+    allRewards = Array.isArray(data) ? data : [];
+    renderRewards(allRewards);
   } catch (e) {
     showToast("Failed to reach Reward service.", "error");
-    return;
   }
-
-  if (res.status === 401 || res.status === 403) {
-    logoutAndRedirect();
-    return;
-  }
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    showToast(data.message || "Failed to load rewards.", "error");
-    return;
-  }
-
-  allRewards = Array.isArray(data) ? data : [];
-  renderRewards(allRewards);
 }
 
 async function loadHistory() {
-  let res;
   try {
-    res = await fetch(`${REWARD_SERVICE_URL}/me`, {
-      headers: authHeaders(),
+    const res = await fetch(`${REWARD_SERVICE_URL}/me`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/";
+      return;
+    }
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (historyListEl) historyListEl.innerHTML = "";
+      const msg = data.details
+        ? `${data.message} (${data.details})`
+        : data.message || "Failed to load history.";
+      showToast(msg, "error");
+      return;
+    }
+
+    renderHistory(Array.isArray(data) ? data : []);
   } catch (e) {
     showToast("Failed to reach Reward service (history).", "error");
-    return;
   }
-
-  if (res.status === 401 || res.status === 403) {
-    logoutAndRedirect();
-    return;
-  }
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    showToast(data.message || "Failed to load history.", "error");
-    return;
-  }
-
-  renderHistory(Array.isArray(data) ? data : []);
 }
 
 async function redeemReward(payload) {
-  let res;
   try {
-    res = await fetch(`${REWARD_SERVICE_URL}/redeem`, {
+    const res = await fetch(`${REWARD_SERVICE_URL}/redeem`, {
       method: "POST",
-      headers: authHeaders(),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(payload),
     });
+
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/";
+      return null;
+    }
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data.message || "Redeem failed.", "error");
+      return null;
+    }
+    return data;
   } catch (e) {
     showToast("Failed to reach Reward service (redeem).", "error");
     return null;
   }
-
-  if (res.status === 401 || res.status === 403) {
-    logoutAndRedirect();
-    return null;
-  }
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    showToast(data.message || "Redeem failed.", "error");
-    return null;
-  }
-  return data;
 }
 
 // ---------------- Rendering ----------------
@@ -234,15 +206,15 @@ function renderRewards(list) {
       r.stock === null
         ? "Unlimited"
         : r.stock > 0
-        ? `${r.stock} left`
-        : "Out of stock";
+          ? `${r.stock} left`
+          : "Out of stock";
 
     const badge =
       r.fulfilment_type === "voucher"
         ? "Voucher"
         : r.fulfilment_type === "delivery"
-        ? "Delivery"
-        : "Pickup";
+          ? "Delivery"
+          : "Pickup";
 
     const disabled =
       r.stock !== null && r.stock <= 0 ? "opacity-50 pointer-events-none" : "";
@@ -265,8 +237,8 @@ function renderRewards(list) {
       ${imgHtml}
       <h3 class="font-bold text-lg">${escapeHtml(r.name)}</h3>
       <p class="text-sm text-slate-600 mt-1">${escapeHtml(
-        r.description || ""
-      )}</p>
+      r.description || ""
+    )}</p>
 
       <div class="mt-3 flex justify-between items-center">
         <span class="text-xs px-2 py-1 rounded-full bg-slate-100 border">${badge}</span>
@@ -325,11 +297,11 @@ function openRedeemModal(reward) {
     reward.fulfilment_type === "delivery"
       ? "Delivery requires address details."
       : reward.fulfilment_type === "voucher"
-      ? "Voucher code will be generated after redeem."
-      : "Pickup item — see pickup location in history.";
+        ? "Voucher code will be generated after redeem."
+        : "Pickup item — see pickup location in history.";
 
   quantityInputEl.value = 1;
-  recipientEmailEl.value = getUser()?.email || "";
+  recipientEmailEl.value = currentUser?.email || "";
 
   // Reset delivery fields each time modal opens (prevents old data sticking)
   recipientNameEl.value = "";
@@ -353,9 +325,8 @@ function updateModalCostText() {
   if (!selectedReward) return;
   const qty = Number(quantityInputEl.value || 1);
   const safeQty = qty > 0 ? qty : 1;
-  modalCostTextEl.textContent = `Cost: ${
-    safeQty * Number(selectedReward.cost_points)
-  } pts`;
+  modalCostTextEl.textContent = `Cost: ${safeQty * Number(selectedReward.cost_points)
+    } pts`;
 }
 
 // ---------------- Events ----------------
@@ -474,20 +445,43 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
   window.location.href = "/";
 });
 
+const sidebarLogoutBtn = document.getElementById("sidebarLogoutBtn");
+if (sidebarLogoutBtn) {
+  sidebarLogoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/";
+  });
+}
+
 // ---------------- Init ----------------
 (async function init() {
-  if (!ensureLoggedIn()) return;
+  // Guard is at top level, but double check here if needed
+  if (!token || !currentUser) return;
+
+  // Sync Sidebar Profile
+  if (currentUser.fullName) {
+    const sidebarNameEl = document.getElementById("sidebarUserName");
+    if (sidebarNameEl) sidebarNameEl.textContent = currentUser.fullName;
+  }
+
+  // Display profile image in sidebar if available
+  if (currentUser.profileImageUrl) {
+    const avatarContainer = document.querySelector('.user-details')?.previousElementSibling;
+    if (avatarContainer && avatarContainer.classList.contains('bg-slate-200')) {
+      const fullUrl = currentUser.profileImageUrl.startsWith('http')
+        ? currentUser.profileImageUrl
+        : `/auth${currentUser.profileImageUrl}`;
+      avatarContainer.innerHTML = `<img src="${fullUrl}" class="w-full h-full object-cover rounded-full">`;
+    }
+  }
 
   try {
     await loadPoints();
     await loadRewards();
     await loadHistory();
   } catch (e) {
-    // If token missing, authHeaders throws:
-    if (String(e?.message || "").toLowerCase().includes("missing token")) {
-      logoutAndRedirect();
-      return;
-    }
+    console.error("[REWARDS] Init load error:", e);
     showToast("Failed to load rewards page data.", "error");
   }
 })();

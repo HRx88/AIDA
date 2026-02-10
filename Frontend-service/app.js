@@ -19,6 +19,7 @@ const CALENDAR_BASE_URL = process.env.CALENDAR_BASE_URL || 'http://localhost:500
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:5006';
 const VIDEO_SERVICE_URL = process.env.VIDEO_SERVICE_URL || 'http://localhost:5002';
 const PET_SERVICE_URL = process.env.PET_SERVICE_URL || 'http://localhost:5004';
+const REWARD_SERVICE_URL = process.env.REWARD_SERVICE_URL || 'http://localhost:5007';
 
 // Proxy Error Handler
 const proxyErrorHandler = (err, req, res) => {
@@ -82,6 +83,15 @@ app.use(
   })
 );
 
+app.use(
+  '/rewards',
+  createProxyMiddleware({
+    ...commonProxyOptions,
+    target: REWARD_SERVICE_URL,
+    pathRewrite: { '^/rewards': '' },
+  })
+);
+
 // ✅ Only parse JSON for your own frontend routes AFTER proxy
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -108,6 +118,7 @@ app.listen(PORT, () => {
   console.log(`  /calendar -> ${CALENDAR_BASE_URL}`);
   console.log(`  /calls    -> ${VIDEO_SERVICE_URL}`);
   console.log(`  /pet      -> ${PET_SERVICE_URL}`);
+  console.log(`  /rewards  -> ${REWARD_SERVICE_URL}`);
 });
 
 module.exports = app;
