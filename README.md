@@ -16,16 +16,11 @@ AIDA utilizes a cloud-native microservices architecture to ensure high availabil
 
 ### System Architecture
 
-## Key Features
- 
-- 🐾 **Digital Pet Motivator**: An interactive virtual pet that encourages task completion and reflects the user's progress through its mood and evolution.
-- 📅 **Smart Task Management**: Personalized task scheduling and real-time tracking of Activities of Daily Living (ADLs).
-- 🤖 **AI-Assisted Guidance**: Intelligent nudges and conversational support to help users stay on track with their routines.
-- 🎁 **Gamified Rewards**: Users earn points for completing tasks, which can be redeemed for real-world or digital rewards.
-- 📹 **Remote Support**: Secure video and voice communication for real-time assistance from staff or caregivers.
-- 🎨 **Accessibility-First Design**: A clean, glassmorphism-inspired UI designed specifically for ease of use and cognitive clarity.
+
 ```mermaid
 graph TD
+
+
     Client[Web Browser] --> FS[Frontend Service :5001]
     
     subgraph "Microservices Layer"
@@ -50,6 +45,17 @@ graph TD
 - **Gateway Pattern**: The `Frontend-service` acts as a reverse proxy, centralizing request routing and simplifying client-side API configuration.
 - **Stateless Authentication**: JWT (JSON Web Tokens) are used across all services to ensure secure, stateless communication.
 - **Service Isolation**: Each core feature (Auth, Calendar, Video, etc.) is encapsulated in its own service, allowing for independent updates and technological flexibility.
+
+
+## Key Features
+ 
+- 🐾 **Digital Pet Motivator**: An interactive virtual pet that encourages task completion and reflects the user's progress through its mood and evolution.
+- 📅 **Smart Task Management**: Personalized task scheduling and real-time tracking of Activities of Daily Living (ADLs).
+- 🤖 **AI-Assisted Guidance**: Intelligent nudges and conversational support to help users stay on track with their routines.
+- 🎁 **Gamified Rewards**: Users earn points for completing tasks, which can be redeemed for real-world or digital rewards.
+- 📹 **Remote Support**: Secure video and voice communication for real-time assistance from staff or caregivers.
+- 🎨 **Accessibility-First Design**: A clean, glassmorphism-inspired UI designed specifically for ease of use and cognitive clarity.
+
 
 ## Tech Stack
 - **Frontend**: Modular HTML5, Vanilla JavaScript (ES6+), CSS3 (Modern Glassmorphism Design)
