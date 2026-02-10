@@ -135,6 +135,4 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      reward-service:
-        condition: service_healthy
-    restart: unless-stopped
+      
