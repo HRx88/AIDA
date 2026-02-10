@@ -84,7 +84,8 @@ const deleteCall = async (callId) => {
     return result.rows[0] || null;
 };
 
-// Auto-expire stale calls (older than 2 hours and still scheduled/active/urgent)
+// Auto-expire stale calls (older than 2 hours and still scheduled/urgent)
+// NOTE: 'active' calls are NOT auto-expired — they persist until staff resolves them
 const autoExpireStaleCalls = async () => {
     // Note: We use 'Asia/Singapore' timezone as the base since user is in SG (+08:00)
     // and times are stored as TIMESTAMP without timezone (effectively local time)
@@ -95,7 +96,7 @@ const autoExpireStaleCalls = async () => {
          SET status = 'cancelled', 
              notes = COALESCE(notes || ' [System: Auto-cancelled due to timeout]', '[System: Auto-cancelled due to timeout]'),
              updated_at = NOW()
-         WHERE (status IN ('scheduled', 'active', 'urgent'))
+         WHERE (status IN ('scheduled', 'urgent'))
            AND (
                (call_type = 'checkin' AND scheduled_time < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Singapore') - INTERVAL '${EXPIRY_INTERVAL}')
                OR 

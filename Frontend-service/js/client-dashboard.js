@@ -13,15 +13,9 @@ let currentIncomingCall = null;
 let ringtone = null;
 let callingSound = null;
 
-// Track notification attempts per call (max 3) - persisted across refresh
-const MAX_NOTIFICATION_ATTEMPTS = 3;
-function getNotificationAttempts() {
-    const stored = localStorage.getItem('callNotificationAttempts');
-    return stored ? JSON.parse(stored) : {};
-}
-function saveNotificationAttempts(attempts) {
-    localStorage.setItem('callNotificationAttempts', JSON.stringify(attempts));
-}
+// Track ring attempts per call (limit 3 rings, but call stays in list)
+const MAX_RING_ATTEMPTS = 3;
+const ringAttempts = {}; // { callId: count }
 
 let emergencyPollInterval = null;
 let isInCall = false; // Tracks if client is currently in a video call
@@ -163,49 +157,38 @@ async function checkForActiveCalls() {
         // Skip if client is already in a call
         if (activeCalls.length > 0 && !isInCall) {
             const activeCall = activeCalls[0];
-            const attempts = getNotificationAttempts();
 
-            // Initialize attempt counter for this call
-            if (!attempts[activeCall.id]) {
-                attempts[activeCall.id] = 0;
+            // Initialize ring counter for this call
+            if (!ringAttempts[activeCall.id]) {
+                ringAttempts[activeCall.id] = 0;
             }
 
-            // Increment attempt on every poll cycle while call is active
-            if (attempts[activeCall.id] < MAX_NOTIFICATION_ATTEMPTS) {
-                attempts[activeCall.id]++;
-                saveNotificationAttempts(attempts);
-                console.log(`Call notification attempt ${attempts[activeCall.id]}/${MAX_NOTIFICATION_ATTEMPTS}`);
+            if (ringAttempts[activeCall.id] < MAX_RING_ATTEMPTS) {
+                ringAttempts[activeCall.id]++;
 
-                // Show notification if not already showing (prevents flickering)
+                // Show notification if not already showing
                 if (!currentIncomingCall || currentIncomingCall.id !== activeCall.id) {
                     showIncomingCallNotification(activeCall);
                 } else {
-                    // Just ensure modal is visible if it was closed by mistake
                     const modal = document.getElementById('incomingCallModal');
                     if (modal && modal.classList.contains('hidden')) {
                         showIncomingCallNotification(activeCall);
                     }
                 }
-            } else if (attempts[activeCall.id] === MAX_NOTIFICATION_ATTEMPTS) {
-                // Max attempts reached - mark as missed and stop
-                console.log('Max notification attempts reached - marking call as missed');
-                attempts[activeCall.id]++;
-                saveNotificationAttempts(attempts);
-                markCallAsMissed(activeCall.id);
+            } else {
+                // Max rings reached — stop ringing, hide modal, but do NOT cancel the call
+                if (ringtone) ringtone.pause();
+                document.getElementById('incomingCallModal').classList.add('hidden');
+                currentIncomingCall = null;
             }
         }
 
-        // Clean up old attempt entries for calls no longer active
-        const cleanupAttempts = getNotificationAttempts();
-        const currentActiveIds = new Set(activeCalls.map(c => c.id.toString()));
-        let changed = false;
-        for (const id of Object.keys(cleanupAttempts)) {
-            if (!currentActiveIds.has(id)) {
-                delete cleanupAttempts[id];
-                changed = true;
-            }
+        // Clean up ring attempts for calls no longer active
+        for (const id of Object.keys(ringAttempts)) {
+            const stillActive = activeCalls.some(c => c.id.toString() === id);
+            if (!stillActive) delete ringAttempts[id];
         }
-        if (changed) saveNotificationAttempts(cleanupAttempts);
+
 
         previousScheduledIds = scheduled.map(c => c.id);
         renderScheduledCalls(scheduled);
@@ -215,26 +198,6 @@ async function checkForActiveCalls() {
     }
 }
 
-// Mark call as missed after max attempts (uses 'cancelled' status)
-async function markCallAsMissed(callId) {
-    try {
-        await fetch(`${VIDEO_SERVICE}/${callId}/status`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ status: 'cancelled', notes: 'Call not answered after 3 attempts' })
-        });
-        // Hide notification modal if showing
-        if (ringtone) ringtone.pause();
-        document.getElementById('incomingCallModal').classList.add('hidden');
-        currentIncomingCall = null;
-        console.log('Call marked as cancelled (not answered)');
-    } catch (err) {
-        console.error('Error marking call as missed:', err);
-    }
-}
 
 function showIncomingCallNotification(call) {
     currentIncomingCall = call;
@@ -457,6 +420,7 @@ async function startEmergencyCall() {
 
         if (response.ok && data.callId) {
             console.log(`Emergency created with ID: ${data.callId}. Waiting for staff to answer...`);
+            localStorage.setItem('currentCallId', data.callId);
 
             // Poll for status change: wait until it becomes 'active' (staff answered)
             emergencyPollInterval = setInterval(async () => {
@@ -504,19 +468,14 @@ async function startEmergencyCall() {
     }
 }
 
-function cancelCall() {
+async function cancelCall() {
     if (emergencyPollInterval) clearInterval(emergencyPollInterval);
     if (callingSound) callingSound.pause();
     isCallingEmergency = false; // Allow new emergency calls
     document.getElementById('callingView').classList.add('hidden');
     document.getElementById('mainView').classList.remove('hidden');
-}
 
-async function endCall() {
-    isCallingEmergency = false; // Allow new emergency calls
-    isInCall = false; // Allow incoming call notifications again
-
-    // Mark the current call as completed in the backend
+    // Cancel the emergency on the backend so staff doesn't see a stale alert
     const currentCallId = localStorage.getItem('currentCallId');
     if (currentCallId) {
         try {
@@ -526,14 +485,20 @@ async function endCall() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ status: 'completed' })
+                body: JSON.stringify({ status: 'cancelled', notes: 'Emergency cancelled by client (no answer or manual cancel)' })
             });
-            console.log(`Call ${currentCallId} marked as completed`);
-            localStorage.removeItem('currentCallId');
         } catch (err) {
-            console.error('Error marking call as completed:', err);
+            console.error('Error cancelling emergency:', err);
         }
+        localStorage.removeItem('currentCallId');
     }
+    loadCalls();
+}
+
+async function endCall() {
+    isCallingEmergency = false; // Allow new emergency calls
+    isInCall = false; // Allow incoming call notifications again
+    localStorage.removeItem('currentCallId');
 
     document.getElementById('inCallView').classList.add('hidden');
     document.getElementById('callFrame').src = '';

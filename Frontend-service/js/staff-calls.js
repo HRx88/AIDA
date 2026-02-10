@@ -12,6 +12,7 @@ let currentIncomingCall = null;
 let ringtone = null;
 let editingCallId = null;
 let activeCallId = null; // Track the call currently being attended
+let activeCallType = null; // 'emergency' or 'checkin'
 
 const MAX_EMERGENCY_ATTEMPTS = 3;
 
@@ -102,8 +103,10 @@ async function loadCalls() {
         const data = await response.json();
         const allCalls = data.calls || [];
 
-        // 1. Active Emergency Calls (urgent)
-        const emergencies = allCalls.filter(c => c.status === 'urgent' && c.call_type === 'emergency');
+        // 1. Active Emergency Calls (urgent or active SOS)
+        const emergencies = allCalls.filter(c =>
+            (c.status === 'urgent' || c.status === 'active') && c.call_type === 'emergency'
+        );
 
         const now = new Date();
         const EXPIRY_HOURS = 2; // Auto-expiry for stale calls
@@ -116,7 +119,7 @@ async function loadCalls() {
                 // Completed or cancelled always go to history
                 if (['completed', 'cancelled'].includes(c.status)) return false;
 
-                // If it's still 'scheduled' or 'active', check if it's stale
+                // If it's 'scheduled' or 'active', check if it's stale
                 const callTime = new Date(c.scheduled_time);
                 const diffHours = (now - callTime) / 3600000;
 
@@ -133,7 +136,7 @@ async function loadCalls() {
                 // Explicitly finalized calls always go to history
                 if (['completed', 'cancelled'].includes(c.status)) return true;
 
-                // Stale calls (not marked yet) also move to history
+                // Stale calls (not marked yet) move to history after 2 hours
                 const callTime = new Date(c.scheduled_time);
                 const diffHours = (now - callTime) / 3600000;
                 return diffHours >= EXPIRY_HOURS;
@@ -183,29 +186,23 @@ async function checkForNewEmergencies() {
                 attempts[callId] = 0;
             }
 
-            // Check if under max attempts
+            // Check if under max attempts for RINGING only
             if (attempts[callId] < MAX_EMERGENCY_ATTEMPTS) {
                 attempts[callId]++;
                 saveEmergencyAttempts(attempts);
-                console.log(`Emergency call #${callId} - attempt ${attempts[callId]}/${MAX_EMERGENCY_ATTEMPTS}`);
+                console.log(`Emergency call #${callId} - ring ${attempts[callId]}/${MAX_EMERGENCY_ATTEMPTS}`);
 
-                // Show/Refresh notification on every attempt to ensure staff sees it
-                // Only trigger if modal is hidden or if it's the first attempt
+                // Show notification on first attempt or if modal was dismissed
                 const modal = document.getElementById('incomingCallModal');
                 if (attempts[callId] === 1 || (modal && modal.classList.contains('hidden'))) {
                     showIncomingCallNotification(call);
                 }
-            } else if (attempts[callId] === MAX_EMERGENCY_ATTEMPTS) {
-                // Max attempts reached (3 attempts completed) - mark as cancelled and move to history
-                console.log(`Emergency call #${callId} - max attempts reached, marking as cancelled`);
-                attempts[callId]++; // Increment to 4 to prevent re-entry
-                saveEmergencyAttempts(attempts);
-
-                // Remove from local list so it disappears from active UI immediately
-                const idx = emergencies.findIndex(e => e.id.toString() === callId);
-                if (idx > -1) emergencies.splice(idx, 1);
-
-                await markEmergencyAsMissed(callId);
+            } else {
+                // Max rings reached — stop ringing, hide modal, but keep emergency in the tab
+                if (ringtone) ringtone.pause();
+                const modal = document.getElementById('incomingCallModal');
+                if (modal) modal.classList.add('hidden');
+                currentIncomingCall = null;
             }
         }
 
@@ -517,6 +514,7 @@ function renderHistory(calls) {
 
 // Start a scheduled call - updates status to 'active' so client gets notified
 async function startCall(callId, hostUrl) {
+    activeCallType = 'checkin';
     try {
         // Update call status to 'active' - this triggers client notification
         await fetch(`${VIDEO_SERVICE}/${callId}/status`, {
@@ -541,6 +539,7 @@ async function startCall(callId, hostUrl) {
 
 async function answerEmergencyCall(callId, hostUrl) {
     if (ringtone) ringtone.pause();
+    activeCallType = 'emergency';
     try {
         // Mark as active so the client knows help is on the way
         activeCallId = callId;
@@ -569,7 +568,16 @@ function closeCallModal() {
     document.getElementById('callModal').classList.add('hidden');
     document.getElementById('wherebyFrame').src = '';
 
-    // Show outcome modal if we have an active call
+    // If it was an emergency, resolve it automatically
+    if (activeCallId && activeCallType === 'emergency') {
+        const idToResolve = activeCallId;
+        activeCallId = null;
+        activeCallType = null;
+        recordOutcome('completed', 'Emergency call automatically resolved upon completion.', idToResolve);
+        return;
+    }
+
+    // Show outcome modal if we have an active scheduled call
     if (activeCallId) {
         document.getElementById('outcomeModal').classList.remove('hidden');
     } else {
@@ -577,11 +585,12 @@ function closeCallModal() {
     }
 }
 
-async function recordOutcome(status) {
-    if (!activeCallId) return;
+async function recordOutcome(status, customNotes, targetId = null) {
+    const targetCallId = targetId || activeCallId;
+    if (!targetCallId) return;
 
     try {
-        const response = await fetch(`${VIDEO_SERVICE}/${activeCallId}/status`, {
+        const response = await fetch(`${VIDEO_SERVICE}/${targetCallId}/status`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -589,12 +598,16 @@ async function recordOutcome(status) {
             },
             body: JSON.stringify({
                 status: status,
-                notes: status === 'cancelled' ? 'Session ended - marked as missed by staff.' : 'Session completed successfully.'
+                notes: customNotes || (status === 'cancelled' ? 'Session ended - marked as missed by staff.' : 'Session completed successfully.')
             })
         });
 
         if (response.ok) {
             showToast(`Session marked as ${status === 'cancelled' ? 'missed' : 'completed'}.`, 'success');
+            activeCallId = null;
+            activeCallType = null;
+            document.getElementById('outcomeModal').classList.add('hidden');
+            loadCalls();
         }
     } catch (err) {
         console.error('Error recording outcome:', err);
@@ -785,4 +798,28 @@ async function handleEditCallSubmit(e) {
 function logout() {
     localStorage.clear();
     window.location.href = '/';
+}
+
+async function closeOutcomeModal() {
+    const callIdToReset = activeCallId;
+    document.getElementById('outcomeModal').classList.add('hidden');
+    activeCallId = null;
+    activeCallType = null;
+
+    // Reset the call back to 'scheduled' so it stays in the Scheduled tab for retries
+    if (callIdToReset) {
+        try {
+            await fetch(`${VIDEO_SERVICE}/${callIdToReset}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: 'scheduled' })
+            });
+        } catch (err) {
+            console.error('Error resetting call status:', err);
+        }
+    }
+    loadCalls();
 }
