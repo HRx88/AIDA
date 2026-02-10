@@ -99,24 +99,27 @@ async function loadCalls() {
         const now = new Date();
         const EXPIRY_HOURS = 2; // Calls move to history after 2 hours past scheduled time
 
-        // Filter scheduled calls - show if within 2 hours after scheduled time (includes completed early)
+        // Filter scheduled calls - show if status is 'scheduled' or 'active' AND not stale
         const scheduled = data.calls.filter(c => {
             if (c.call_type !== 'checkin') return false;
-            // Cancelled calls always go to history
-            if (c.status === 'cancelled') return false;
+            // Completed or cancelled always go to history
+            if (['completed', 'cancelled'].includes(c.status)) return false;
+
             const callTime = new Date(c.scheduled_time);
             const diffHours = (now - callTime) / 3600000;
-            // Show scheduled, active, OR completed calls if still within 2 hours of scheduled time
+            // Show scheduled or active calls if within 2 hours after scheduled time
             return diffHours < EXPIRY_HOURS;
         });
 
-        // History - cancelled, OR any call past 2 hours after scheduled time
+        // History - completed, cancelled, OR any call past 2 hours after scheduled time
         const history = data.calls.filter(c => {
-            if (c.status === 'cancelled') return true; // Cancelled always goes to history
+            // Explicitly finalized calls always go to history
+            if (['completed', 'cancelled'].includes(c.status)) return true;
+
             if (c.call_type === 'checkin') {
                 const callTime = new Date(c.scheduled_time);
                 const diffHours = (now - callTime) / 3600000;
-                // If 2+ hours past scheduled time, move to history
+                // If 2+ hours past scheduled time (stale), move to history
                 return diffHours >= EXPIRY_HOURS;
             }
             return false;
@@ -146,9 +149,10 @@ async function checkForActiveCalls() {
         const now = new Date();
         const EXPIRY_HOURS = 2;
 
-        // Filter scheduled calls - show if within 2 hours after scheduled time
+        // Filter scheduled calls for internal tracking
         const scheduled = data.calls.filter(c => {
-            if (c.call_type !== 'checkin' || c.status === 'cancelled') return false;
+            if (c.call_type !== 'checkin') return false;
+            if (['completed', 'cancelled'].includes(c.status)) return false;
             const callTime = new Date(c.scheduled_time);
             const diffHours = (now - callTime) / 3600000;
             return diffHours < EXPIRY_HOURS;
@@ -362,7 +366,9 @@ function renderHistory(calls) {
         return;
     }
 
-    list.innerHTML = calls.map(call => `
+    list.innerHTML = calls.map(call => {
+        const isCancelled = call.status === 'cancelled';
+        return `
         <div class="flex justify-between items-center p-3 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg ${call.call_type === 'emergency' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'}">
@@ -377,18 +383,18 @@ function renderHistory(calls) {
             </div>
             <div class="text-right">
                 <p class="text-xs font-bold text-slate-600">
-                    ${new Date(call.created_at).toLocaleDateString('en-SG', {
-        day: 'numeric',
-        month: 'short'
-    })}
+                    ${new Date(call.created_at || call.scheduled_time).toLocaleDateString('en-SG', {
+            day: 'numeric',
+            month: 'short'
+        })}
                 </p>
-                <div class="flex items-center justify-end text-[10px] font-bold text-green-600 uppercase">
-                    <i class="fa-solid fa-check-circle mr-1"></i>
-                    Done
+                <div class="flex items-center justify-end text-[10px] font-bold ${isCancelled ? 'text-red-500' : 'text-green-600'} uppercase">
+                    <i class="fa-solid ${isCancelled ? 'fa-xmark-circle' : 'fa-check-circle'} mr-1"></i>
+                    ${isCancelled ? 'Missed' : 'Done'}
                 </div>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function joinCall(url, callId) {

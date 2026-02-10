@@ -106,29 +106,36 @@ async function loadCalls() {
         const emergencies = allCalls.filter(c => c.status === 'urgent' && c.call_type === 'emergency');
 
         const now = new Date();
-        const EXPIRY_HOURS = 2; // Calls move to history after 2 hours past scheduled time
+        const EXPIRY_HOURS = 2; // Auto-expiry for stale calls
 
-        // 2. Scheduled Check-ins - show if within 2 hours after scheduled time (includes completed early)
+        // 2. Scheduled Check-ins
+        // Show if status is 'scheduled' or 'active' AND not stale (or was just updated)
         const scheduled = allCalls
             .filter(c => {
                 if (c.call_type !== 'checkin') return false;
-                // Cancelled calls always go to history
-                if (c.status === 'cancelled') return false;
+                // Completed or cancelled always go to history
+                if (['completed', 'cancelled'].includes(c.status)) return false;
+
+                // If it's still 'scheduled' or 'active', check if it's stale
                 const callTime = new Date(c.scheduled_time);
                 const diffHours = (now - callTime) / 3600000;
-                // Show scheduled, active, OR completed calls if still within 2 hours of scheduled time
+
+                // Show if it's in the future OR within the 2-hour window after scheduled time
                 return diffHours < EXPIRY_HOURS;
             })
             .sort((a, b) => new Date(a.scheduled_time) - new Date(b.scheduled_time));
 
-        // 3. History - cancelled, OR any call past 2 hours after scheduled time
+        // 3. History - completed, cancelled, OR any call past 2 hours after scheduled time
         const checkinHistory = allCalls
             .filter(c => {
-                if (c.call_type !== 'checkin' && c.call_type) return false; // Only checkins (or legacy null type)
-                if (c.status === 'cancelled') return true; // Cancelled always goes to history
+                if (c.call_type !== 'checkin' && c.call_type) return false;
+
+                // Explicitly finalized calls always go to history
+                if (['completed', 'cancelled'].includes(c.status)) return true;
+
+                // Stale calls (not marked yet) also move to history
                 const callTime = new Date(c.scheduled_time);
                 const diffHours = (now - callTime) / 3600000;
-                // If 2+ hours past scheduled time, move to history
                 return diffHours >= EXPIRY_HOURS;
             })
             .sort((a, b) => new Date(b.scheduled_time) - new Date(a.scheduled_time));
