@@ -15,6 +15,15 @@ PWIDs often face significant challenges in managing daily routines independently
 AIDA utilizes a cloud-native microservices architecture to ensure high availability, fault isolation, and the ability to scale components independently.
 
 ### System Architecture
+
+## Key Features
+ 
+- 🐾 **Digital Pet Motivator**: An interactive virtual pet that encourages task completion and reflects the user's progress through its mood and evolution.
+- 📅 **Smart Task Management**: Personalized task scheduling and real-time tracking of Activities of Daily Living (ADLs).
+- 🤖 **AI-Assisted Guidance**: Intelligent nudges and conversational support to help users stay on track with their routines.
+- 🎁 **Gamified Rewards**: Users earn points for completing tasks, which can be redeemed for real-world or digital rewards.
+- 📹 **Remote Support**: Secure video and voice communication for real-time assistance from staff or caregivers.
+- 🎨 **Accessibility-First Design**: A clean, glassmorphism-inspired UI designed specifically for ease of use and cognitive clarity.
 ```mermaid
 graph TD
     Client[Web Browser] --> FS[Frontend Service :5001]
@@ -48,7 +57,6 @@ graph TD
 - **Database**: PostgreSQL (hosted via Supabase)
 - **Containerization**: Docker, Docker Compose
 - **Key Integrations**:
-    - **Google Calendar API**: For seamless task scheduling and synchronization.
     - **Whereby**: Powering secure video communication between staff and clients.
     - **AWS SDK (S3)**: For reliable storage of user profile images.
     - **JWT**: For secure, role-based access control.
@@ -321,3 +329,5 @@ Most endpoints require a **Bearer Token**.
 
 > [!TIP]
 > Use the environment variable `{{base_url}} = http://localhost:5001` in Postman to switch between local and production environments easily.
+
+
