@@ -6,7 +6,12 @@ from flask_cors import CORS
 from threading import Lock
 
 from voice.STT import calibrate_microphone, listen_once
-from voice.TTS import speak
+
+import platform
+if platform.system() == "Linux":
+    from voice.TTS_rpi import speak   # espeak + pw-play (Bluetooth)
+else:
+    from voice.TTS import speak       # pyttsx3 (Windows SAPI)
 
 app = Flask(__name__)
 CORS(app)  # Allow cross-origin from Docker containers

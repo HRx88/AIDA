@@ -13,7 +13,8 @@ recognizer = sr.Recognizer()                # Creates a recognizer object that h
 recognizer.pause_threshold = 2           # How long (in seconds) of silence is allowed before the recognizer decides "the user has stopped talking".
 recognizer.non_speaking_duration = 0.7      # How much silence (in seconds) is kept at the end of the recording to avoid cutting off the end of the user's speech.
 
-MIC_INDEX = 1   #we will later change the device index in rasberry pi
+import os
+MIC_INDEX = int(os.getenv("MIC_INDEX", "1"))   # RPi: set MIC_INDEX=0 in env
 
 def calibrate_microphone():
     with sr.Microphone(device_index=MIC_INDEX) as source:

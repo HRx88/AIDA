@@ -104,7 +104,7 @@ services:
     environment:
       - AI_SERVICE_PORT=5010
       - CALENDAR_BASE_URL=http://calendar-service:5003
-      - VOICE_SERVER_URL=http://host.docker.internal:5000
+      - VOICE_SERVER_URL=${VOICE_SERVER_URL:-http://host.docker.internal:5000}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
