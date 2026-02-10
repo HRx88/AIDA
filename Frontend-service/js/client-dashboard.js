@@ -187,11 +187,16 @@ async function checkForActiveCalls() {
                     }
                 }
             } else if (attempts[activeCall.id] === MAX_NOTIFICATION_ATTEMPTS) {
-                // Max attempts reached - mark as missed and stop
-                console.log('Max notification attempts reached - marking call as missed');
+                // Max attempts reached - stop ringing BUT keep call active
+                console.log('Max notification attempts reached - stopping ringing but keeping call live');
                 attempts[activeCall.id]++;
                 saveNotificationAttempts(attempts);
-                markCallAsMissed(activeCall.id);
+
+                // Stop ringtone and hide modal
+                if (ringtone) ringtone.pause();
+                const modal = document.getElementById('incomingCallModal');
+                if (modal) modal.classList.add('hidden');
+                currentIncomingCall = null;
             }
         }
 
