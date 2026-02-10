@@ -95,9 +95,17 @@ async function updateMood() {
 
         if (data.mood !== currentMood) {
             currentMood = data.mood;
-            // Update frame limits based on folder content
-            if (currentMood === 'playing') totalFrames = 27;
-            else totalFrames = 50;
+
+            // Define frame counts for each mood
+            const frameCounts = {
+                playing: 27,
+                dirty: 46,
+                happy: 50,
+                bored: 50
+            };
+
+
+            totalFrames = frameCounts[currentMood] || 50;
             currentFrame = 1; // Reset animation on mood change
         }
     } catch (err) {
