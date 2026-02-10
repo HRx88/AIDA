@@ -62,6 +62,10 @@
                     <i class="fa-solid fa-calendar"></i>
                     <span class="nav-label">Calendar</span>
                 </a>
+                <a href="#" id="aiCompanionLink" class="nav-item" onclick="goToAiCompanion(event)">
+                    <i class="fa-solid fa-robot"></i>
+                    <span class="nav-label">AI Companion</span>
+                </a>
                 <a href="/pet-view.html" class="nav-item">
                     <i class="fa-solid fa-paw"></i>
                     <span class="nav-label">My Pet</span>
@@ -99,6 +103,10 @@
             <a href="#" class="text-blue-600 flex flex-col items-center">
                 <i class="fa-solid fa-calendar text-xl"></i>
                 <span class="text-[10px] font-bold mt-1">Calendar</span>
+            </a>
+            <a href="#" onclick="goToAiCompanion(event)" class="text-slate-400 flex flex-col items-center">
+                <i class="fa-solid fa-robot text-xl"></i>
+                <span class="text-[10px] font-bold mt-1">AI</span>
             </a>
             <a href="/pet-view.html" class="text-slate-400 flex flex-col items-center">
                 <i class="fa-solid fa-paw text-xl"></i>
@@ -313,6 +321,24 @@
         </div>
 
         <script src="/js/calendar.js"></script>
+        <script>
+            // Navigate to AI Companion on port 5010, passing user data via URL
+            function goToAiCompanion(e) {
+                e.preventDefault();
+                const user = JSON.parse(localStorage.getItem('user') || 'null');
+                const token = localStorage.getItem('token') || '';
+                if (!user) {
+                    alert('Please log in first.');
+                    return;
+                }
+                const params = new URLSearchParams({
+                    userId: user.id,
+                    fullName: user.fullName || user.username || 'Friend',
+                    token: token
+                });
+                window.location.href = `http://localhost:5010/wake?${params.toString()}`;
+            }
+        </script>
 </body>
 
 </html>
