@@ -258,7 +258,7 @@ async function initWakeUpPage() {
     if (speechEl) speechEl.textContent = "You’re all set for today!";
     if (iconEl) iconEl.textContent = "🎉";
     if (startBtn) startBtn.disabled = true;
-    await speakText("Good morning Charlie. You’re all set for today!");
+    await speakText(`Good morning ${getUserFullName()}. You’re all set for today!`);
     sessionStorage.removeItem("currentTaskId");
     return;
   }
@@ -451,8 +451,8 @@ async function initTaskExecutionPage() {
     await sleep(600); // allow DOM + avatar to render
 
     const line = currentTask
-      ? `Okay Charlie. Let’s do ${currentTask.title}. I’m right here with you.`
-      : `Okay Charlie. I’m right here with you.`;
+      ? `Okay ${getUserFullName()}. Let’s do ${currentTask.title}. I’m right here with you.`
+      : `Okay ${getUserFullName()}. I’m right here with you.`;
 
     const aiEl = document.querySelector("#ai-text");
     if (aiEl) aiEl.textContent = `AIDA: ${line}`;
@@ -543,7 +543,8 @@ async function getAiReply(userText) {
         sessionId: getSessionId(),
         taskTitle: ctx.taskTitle,
         taskAction: ctx.taskAction,
-        taskId: ctx.taskId
+        taskId: ctx.taskId,
+        userName: getUserFullName()
       })
     });
 
@@ -657,7 +658,8 @@ async function getAiNudge() {
         sessionId: getSessionId(),
         taskTitle: ctx.taskTitle,
         taskAction: ctx.taskAction,
-        taskId: ctx.taskId
+        taskId: ctx.taskId,
+        userName: getUserFullName()
       })
     });
 
