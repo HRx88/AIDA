@@ -48,12 +48,15 @@ graph TD
 
 
 ## Key Features
- 
 - 🐾 **Digital Pet Motivator**: An interactive virtual pet that encourages task completion and reflects the user's progress through its mood and evolution.
 - 📅 **Smart Task Management**: Personalized task scheduling and real-time tracking of Activities of Daily Living (ADLs).
 - 🤖 **AI-Assisted Guidance**: Intelligent nudges and conversational support to help users stay on track with their routines.
 - 🎁 **Gamified Rewards**: Users earn points for completing tasks, which can be redeemed for real-world or digital rewards.
 - 📹 **Remote Support**: Secure video and voice communication for real-time assistance from staff or caregivers.
+- 🎙️ **Voice Companion**: Hands-free voice interaction via Speech-to-Text and Text-to-Speech, enabling users to converse with AIDA naturally.
+- 🔐 **Role-Based Access Control**: Secure JWT authentication with distinct Staff and Client roles, each with tailored dashboards and permissions.
+- 👥 **Staff Management Portal**: Tools for staff to manage client profiles, upload profile images, and configure personalized support settings.
+- 🍓 **Raspberry Pi Kiosk Mode**: Deployable as a standalone kiosk on a Raspberry Pi for always-on, hands-free access to the AI companion.
 - 🎨 **Accessibility-First Design**: A clean, glassmorphism-inspired UI designed specifically for ease of use and cognitive clarity.
 
 
