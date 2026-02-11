@@ -48,16 +48,16 @@ graph TD
 
 
 ## Key Features
-- 🐾 **Digital Pet Motivator**: An interactive virtual pet that encourages task completion and reflects the user's progress through its mood and evolution.
-- 📅 **Smart Task Management**: Personalized task scheduling and real-time tracking of Activities of Daily Living (ADLs).
-- 🤖 **AI-Assisted Guidance**: Intelligent nudges and conversational support to help users stay on track with their routines.
-- 🎁 **Gamified Rewards**: Users earn points for completing tasks, which can be redeemed for real-world or digital rewards.
-- 📹 **Remote Support**: Secure video and voice communication for real-time assistance from staff or caregivers.
-- 🎙️ **Voice Companion**: Hands-free voice interaction via Speech-to-Text and Text-to-Speech, enabling users to converse with AIDA naturally.
-- 🔐 **Role-Based Access Control**: Secure JWT authentication with distinct Staff and Client roles, each with tailored dashboards and permissions.
-- 👥 **Staff Management Portal**: Tools for staff to manage client profiles, upload profile images, and configure personalized support settings.
-- 🍓 **Raspberry Pi Kiosk Mode**: Deployable as a standalone kiosk on a Raspberry Pi for always-on, hands-free access to the AI companion.
-- 🎨 **Accessibility-First Design**: A clean, glassmorphism-inspired UI designed specifically for ease of use and cognitive clarity.
+- 🐾 **Digital Pet Motivator**: An interactive virtual pet that encourages task completion and reflects the user's progress through dynamic mood states (Happy, Bored, Dirty, Playing) with animated sprite assets.
+- 📅 **Smart Task Management**: Personalized task scheduling with routine support, bulk task creation, drag-to-reorder, and weekly/monthly calendar views. Includes AI-powered schedule generation and task completion statistics.
+- 🤖 **AI-Assisted Guidance**: Context-aware conversational companion powered by Google Gemini, with intelligent nudges, intent detection, and guided task-by-task walkthroughs via dedicated wake, task, and transition screens.
+- 🎁 **Gamified Rewards**: Users earn points for completing tasks with category-based tracking, a global leaderboard, and a redemption store for real-world or digital rewards.
+- 📹 **Remote Support**: Scheduled staff check-in calls and client-initiated emergency calls via Whereby, with call status tracking and history management.
+- 🎙️ **Voice Companion**: Hands-free voice interaction via Google Cloud Speech-to-Text and pyttsx3 Text-to-Speech, enabling users to converse with AIDA naturally using local audio hardware.
+- 🔐 **Role-Based Access Control**: Secure JWT authentication with bcrypt password hashing, supporting distinct Staff, Client, and Admin roles with tailored dashboards and permissions.
+- 👥 **Staff Management Portal**: Tools for staff to register and manage client profiles, upload profile images to S3 storage, and configure personalized accessibility settings.
+- 🍓 **Raspberry Pi Kiosk Mode**: Deployable as a standalone kiosk on a Raspberry Pi for always-on, hands-free access to the AI companion in full-screen Chromium.
+- 🎨 **Accessibility-First Design**: A clean, glassmorphism-inspired UI designed specifically for ease of use and cognitive clarity, with configurable accessibility settings per user.
 
 
 ## Tech Stack
