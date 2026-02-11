@@ -17,28 +17,8 @@ AIDA utilizes a cloud-native microservices architecture to ensure high availabil
 ### System Architecture
 
 
-```mermaid
-graph TD
-
-
-    Client[Web Browser] --> FS[Frontend Service :5001]
-    
-    subgraph "Microservices Layer"
-        FS --> AS[Auth Service :5006]
-        FS --> CS[Calendar Service :5003]
-        FS --> VS[Video Call Service :5002]
-        FS --> PS[Pet Service :5004]
-        FS --> RS[Reward Service :5007]
-    end
-    
-    subgraph "Data & External Integration"
-        AS --> DB[(Supabase PostgreSQL)]
-        CS --> DB
-        CS --> GC[Google Calendar API]
-        VS --> WB[Whereby API]
-        RS --> DB
-        AS --> S3[AWS S3]
-    end
+```
+<img width="1280" height="865" alt="image" src="https://github.com/user-attachments/assets/ff6ffb70-b0a1-4a0b-90a4-2e938afda719" />
 ```
 
 ### Architectural Decisions
