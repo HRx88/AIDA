@@ -79,10 +79,12 @@ graph TD
 
 ## Assumptions / Limitations
 - **Stakeholder Involvement**: We assume MINDS staff will carry out regular check-ins with the PWIDs at their accommodation to ensure their well-being and safety.
-- **Connectivity**: Users are assumed to have access to a basic digital device and stable internet connectivity.
+- **Connectivity**: Users are assumed to have access to a basic digital device and stable internet connectivity. The system does not currently support offline mode — all services require a live connection to the host machine and Supabase.
 - **Self-Reporting**: Task completion is currently self-reported. The system intentionally avoids intrusive monitoring (sensors/cameras) to prioritize user privacy.
-- **AI Integration**: AI features are strictly assistive and supportive, designed to aid decision-making rather than act autonomously.
-- **Prototype Status**: The system is a functional prototype and may require further performance tuning for large-scale production deployment.
+- **AI Integration**: AI features are strictly assistive and supportive, designed to aid decision-making rather than act autonomously. Responses are generated via Google Gemini and may vary in quality.
+- **Voice Hardware Dependency**: The Voice Server requires a physical microphone and speaker on the host machine. It runs outside Docker and must be started separately, limiting deployment to machines with audio hardware.
+- **External Service Dependency**: Core features rely on third-party services (Supabase for database/storage, Whereby for video, Google Gemini for AI, Google Cloud for STT). Service availability and API rate limits are outside our control.
+- **Prototype Status**: The system is a functional prototype and may require further performance tuning, security hardening, and accessibility testing for large-scale production deployment.
 
 ## Setup Instructions
 1. **Clone the repository**
