@@ -120,7 +120,12 @@ graph TD
    GOOGLE_CLIENT_ID=your_google_client_id
    GOOGLE_CLIENT_SECRET=your_google_client_secret
    GOOGLE_REDIRECT_URI=http://localhost:5001/calendar/api/google-calendar/callback
+
+   # Gemini AI Integration(For AI response and conversations)
+   GEMINI_API_KEY=AIzaSyBhc78omIiFIhYwqaHvtVzWC2GiIWj0pTI
    ```
+   
+
 
 3. **Build and Run**
    ```bash
