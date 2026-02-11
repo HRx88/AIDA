@@ -58,14 +58,17 @@ graph TD
 
 
 ## Tech Stack
-- **Frontend**: Modular HTML5, Vanilla JavaScript (ES6+), CSS3 (Modern Glassmorphism Design)
-- **Backend**: Node.js, Express.js
-- **Database**: PostgreSQL (hosted via Supabase)
-- **Containerization**: Docker, Docker Compose
-- **Key Integrations**:
-    - **Whereby**: Powering secure video communication between staff and clients.
-    - **AWS SDK (S3)**: For reliable storage of user profile images.
-    - **JWT**: For secure, role-based access control.
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | HTML5, Vanilla JavaScript (ES6+), CSS3 with Glassmorphism Design |
+| **Backend (Node.js)** | Express.js, http-proxy-middleware, jsonwebtoken (JWT), bcrypt, multer, pg, cors, dotenv |
+| **Backend (Python)** | Flask, Flask-CORS, Requests, python-dotenv |
+| **AI & Voice** | Google Generative AI SDK (`google-genai`), SpeechRecognition, pyttsx3, PyAudio |
+| **Database** | PostgreSQL (hosted on Supabase) |
+| **Object Storage** | Supabase S3 Storage via AWS SDK (`@aws-sdk/client-s3`) — profile images |
+| **Containerization** | Docker, Docker Compose |
+| **Edge Device** | Raspberry Pi (Chromium kiosk mode, Bash setup scripts) |
+| **External APIs** | Whereby (video calls), Google Gemini (LLM), Google Cloud Speech-to-Text |
 
 ## Assumptions / Limitations
 - **Stakeholder Involvement**: We assume MINDS staff will carry out regular check-ins with the PWIDs at their accommodation to ensure their well-being and safety.
