@@ -49,7 +49,7 @@ graph TD
 
 ## Key Features
 - 🐾 **Digital Pet Motivator**: An interactive virtual pet that encourages task completion and reflects the user's progress through dynamic mood states (Happy, Bored, Dirty, Playing) with animated sprite assets.
-- 📅 **Smart Task Management**: Personalized task scheduling with routine support, bulk task creation, drag-to-reorder, and weekly/monthly calendar views. Includes AI-powered schedule generation and task completion statistics.
+- 📅 **Smart Task Management**: Personalized task scheduling with routine support, bulk task creation, and real-time tracking of Activities of Daily Living (ADLs).
 - 🤖 **AI-Assisted Guidance**: Context-aware conversational companion powered by Google Gemini, with intelligent nudges, intent detection, and guided task-by-task walkthroughs via dedicated wake, task, and transition screens.
 - 🎁 **Gamified Rewards**: Users earn points for completing tasks with category-based tracking, a global leaderboard, and a redemption store for real-world or digital rewards.
 - 📹 **Remote Support**: Scheduled staff check-in calls and client-initiated emergency calls via Whereby, with call status tracking and history management.
