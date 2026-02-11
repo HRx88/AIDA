@@ -16,10 +16,8 @@ AIDA utilizes a cloud-native microservices architecture to ensure high availabil
 
 ### System Architecture
 
+![4e81c7d1-b7f5-4b67-9844-c32f8f9359a5 (2)](https://github.com/user-attachments/assets/4cdead45-2b7f-4973-bb40-c0bbb6f35547)
 
-```
-<img width="1280" height="865" alt="image" src="https://github.com/user-attachments/assets/ff6ffb70-b0a1-4a0b-90a4-2e938afda719" />
-```
 
 ### Architectural Decisions
 - **Gateway Pattern**: The `Frontend-service` acts as a reverse proxy using `http-proxy-middleware`, centralizing request routing (`/auth`, `/calendar`, `/pet`, `/rewards`, `/calls`) and simplifying client-side API configuration.
