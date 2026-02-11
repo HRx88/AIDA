@@ -326,18 +326,82 @@ Most endpoints require a **Bearer Token**.
 3. **Authorize**: In Postman, go to the **Auth** tab, select **Bearer Token**, and paste the token.
 
 ### Key API Endpoints
-
-| Service | Endpoint | Method | Description |
-| :--- | :--- | :--- | :--- |
-| **Auth** | `/auth/api/auth/login` | `POST` | Authenticate and receive JWT. |
-| | `/auth/api/auth/users` | `GET` | List all users (Staff/Admin only). |
-| **Calendar**| `/calendar/api/tasks/day/:userId/:date` | `GET` | Fetch tasks for a specific user and date. |
-| | `/calendar/api/logs/complete` | `POST` | Mark a task as completed. |
-| **Rewards** | `/rewards/api/rewards/items` | `GET` | List available reward items. |
-| | `/rewards/api/rewards/redeem` | `POST` | Redeem a reward item. |
-| **Video** | `/calls/api/calls/checkin` | `POST` | Schedule a staff-to-client check-in. |
-| | `/calls/api/calls/emergency` | `POST` | Trigger an emergency call request. |
-| **Pet** | `/pet/api/pet/mood` | `GET` | Retrieve the current mood and state of the digital pet. |
+> All endpoints are proxied through the **Frontend Service** (`localhost:5001`) unless noted otherwise.
+#### Auth Service (`/auth/api/auth/...`)
+| Endpoint | Method | Description |
+|:---|:---|:---|
+| `/auth/api/auth/login` | `POST` | Authenticate and receive JWT |
+| `/auth/api/auth/change-password` | `PUT` | Change current user's password |
+| `/auth/api/auth/update-profile` | `PUT` | Update current user's profile |
+| `/auth/api/auth/upload-avatar` | `POST` | Upload profile image (→ S3) |
+| `/auth/api/auth/users` | `GET` | List all users (Staff only) |
+| `/auth/api/auth/users` | `POST` | Register a new user |
+| `/auth/api/auth/users/:id` | `GET` | Get user by ID |
+| `/auth/api/auth/users/:id` | `PUT` | Update user by ID |
+| `/auth/api/auth/users/:id/avatar` | `POST` | Upload avatar for a specific user |
+#### Calendar Service (`/calendar/api/...`)
+| Endpoint | Method | Description |
+|:---|:---|:---|
+| `/calendar/api/tasks/` | `POST` | Create a new task |
+| `/calendar/api/tasks/bulk` | `POST` | Bulk-create multiple tasks |
+| `/calendar/api/tasks/day/:userId/:date` | `GET` | Get tasks for a user on a date |
+| `/calendar/api/tasks/month/:userId/:year/:month` | `GET` | Get tasks for a user by month |
+| `/calendar/api/tasks/routines/:userId` | `GET` | Get routine tasks for a user |
+| `/calendar/api/tasks/:id` | `GET` | Get a single task |
+| `/calendar/api/tasks/:id` | `PUT` | Update a task |
+| `/calendar/api/tasks/:id` | `DELETE` | Delete a task |
+| `/calendar/api/tasks/:id/reorder` | `PUT` | Reorder task position |
+| `/calendar/api/schedules/` | `POST` | Create a new schedule |
+| `/calendar/api/schedules/user/:userId` | `GET` | Get schedules by user |
+| `/calendar/api/schedules/current/:userId` | `GET` | Get current week schedule |
+| `/calendar/api/schedules/generate/:userId` | `POST` | AI-generate a schedule |
+| `/calendar/api/schedules/:id` | `GET` / `PUT` / `DELETE` | CRUD on a schedule |
+| `/calendar/api/logs/complete` | `POST` | Mark a task as completed |
+| `/calendar/api/logs/today/:userId` | `GET` | Get today's completion status |
+| `/calendar/api/logs/user/:userId/date/:date` | `GET` | Get logs by date |
+| `/calendar/api/logs/user/:userId/week/:weekStart` | `GET` | Get logs by week |
+| `/calendar/api/logs/stats/:userId` | `GET` | Get completion statistics |
+| `/calendar/api/points/:userId` | `GET` | Get points balance |
+| `/calendar/api/points/:userId/history` | `GET` | Get points history |
+| `/calendar/api/points/:userId/breakdown` | `GET` | Points breakdown by category |
+| `/calendar/api/points/leaderboard/all` | `GET` | Global leaderboard |
+#### Reward Service (`/rewards/api/rewards/...`)
+| Endpoint | Method | Description |
+|:---|:---|:---|
+| `/rewards/api/rewards/items` | `GET` | List available rewards |
+| `/rewards/api/rewards/redeem` | `POST` | Redeem a reward |
+| `/rewards/api/rewards/me` | `GET` | Get current user's redemption history |
+#### Video Call Service (`/calls/api/calls/...`)
+| Endpoint | Method | Description |
+|:---|:---|:---|
+| `/calls/api/calls/checkin` | `POST` | Schedule a staff check-in call |
+| `/calls/api/calls/emergency` | `POST` | Trigger an emergency call |
+| `/calls/api/calls/staff/:staffId` | `GET` | Get calls for a staff member |
+| `/calls/api/calls/client/:clientId` | `GET` | Get calls for a client |
+| `/calls/api/calls/:callId` | `GET` | Get call by ID |
+| `/calls/api/calls/:callId` | `PUT` | Update a call |
+| `/calls/api/calls/:callId` | `DELETE` | Delete a call |
+| `/calls/api/calls/:callId/status` | `PATCH` | Update call status |
+| `/calls/api/calls/cleanup` | `POST` | Clean up stale calls |
+#### Pet Service (`/pet/api/pet/...`)
+| Endpoint | Method | Description |
+|:---|:---|:---|
+| `/pet/api/pet/mood` | `GET` | Get digital pet's current mood |
+#### AI Service (Port `5010` — direct access)
+| Endpoint | Method | Description |
+|:---|:---|:---|
+| `/api/ai_reply` | `POST` | Send user text, get AI companion response + intent |
+| `/api/ai_nudge` | `POST` | Get a motivational nudge from the AI |
+| `/api/stt_once` | `POST` | Speech-to-Text (proxied to Voice Server) |
+| `/api/tts` | `POST` | Text-to-Speech (proxied to Voice Server) |
+| `/wake` | `GET` | Wake-up companion UI page |
+| `/task` | `GET` | Task execution UI page |
+| `/task-transition` | `GET` | Task transition UI page |
+#### Voice Server (Port `5000` — host only)
+| Endpoint | Method | Description |
+|:---|:---|:---|
+| `/api/stt_once` | `POST` | Capture microphone audio → text |
+| `/api/tts` | `POST` | Convert text → speaker audio |
 
 > [!TIP]
 > Use the environment variable `{{base_url}} = http://localhost:5001` in Postman to switch between local and production environments easily.
