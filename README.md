@@ -42,9 +42,13 @@ graph TD
 ```
 
 ### Architectural Decisions
-- **Gateway Pattern**: The `Frontend-service` acts as a reverse proxy, centralizing request routing and simplifying client-side API configuration.
-- **Stateless Authentication**: JWT (JSON Web Tokens) are used across all services to ensure secure, stateless communication.
-- **Service Isolation**: Each core feature (Auth, Calendar, Video, etc.) is encapsulated in its own service, allowing for independent updates and technological flexibility.
+- **Gateway Pattern**: The `Frontend-service` acts as a reverse proxy using `http-proxy-middleware`, centralizing request routing (`/auth`, `/calendar`, `/pet`, `/rewards`, `/calls`) and simplifying client-side API configuration.
+- **Dual-Access Model**: Browser clients access backend services through the Frontend gateway, while the RPi Kiosk and PWID companion UI connect **directly** to the AI Service (Port 5010) — bypassing the gateway for low-latency conversational interaction.
+- **Host-Bridge Pattern**: The Voice Server runs on the host machine (outside Docker) to access local audio hardware (microphone/speaker), with the AI Service reaching it via `host.docker.internal`.
+- **Polyglot Services**: Node.js/Express powers the core CRUD services (Auth, Calendar, Pet, Reward, Video Call), while Python/Flask handles the AI and Voice services — choosing the best runtime for each domain.
+- **Stateless Authentication**: JWT (JSON Web Tokens) with bcrypt password hashing are used across all services to ensure secure, stateless communication.
+- **Service Isolation**: Each core feature is encapsulated in its own Docker container with independent dependencies, allowing for independent scaling, updates, and fault isolation.
+- **Shared Data Layer**: All services connect to a single Supabase PostgreSQL database, while profile image uploads are offloaded to Supabase S3 Storage via the Auth Service.
 
 
 ## Key Features
