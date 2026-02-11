@@ -315,6 +315,54 @@ AIDA is fully containerized using Docker, allowing for consistent deployment acr
 
 ---
 
+## Voice Server (Host Setup)
+The Voice Server runs **outside Docker** on the host machine to access local microphone and speaker hardware. It must be started separately.
+### Prerequisites
+- Python 3.10+ installed
+- A working microphone and speaker connected to the host machine
+- [PyAudio](https://pypi.org/project/PyAudio/) requires PortAudio system libraries:
+  - **Windows**: No extra steps — `pip install` handles it
+  - **macOS**: `brew install portaudio`
+  - **Linux**: `sudo apt-get install portaudio19-dev python3-pyaudio`
+### Setup & Run
+1. **Install dependencies** (from the project root):
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. **Start the Voice Server**:
+   ```bash
+   python -m app.main
+   ```
+3. **Verify**: The server should be running on `http://localhost:5000`. The AI Service (Docker) connects to it via `host.docker.internal:5000`.
+> [!IMPORTANT]
+> The Voice Server **must** be running before using any voice features (STT/TTS) in the AI Companion.
+---
+## Raspberry Pi Kiosk Deployment (Optional)
+The AI Companion can be deployed as a standalone kiosk on a Raspberry Pi for hands-free, always-on interaction.
+### Prerequisites
+- Raspberry Pi 4 (or later) with Raspberry Pi OS
+- Network connectivity to the host machine running Docker services
+- Speaker and microphone connected to the RPi
+### Setup
+1. **Copy setup files** to the RPi:
+   ```bash
+   scp -r rpi/ pi@<rpi-ip>:~/aida-kiosk/
+   ```
+2. **Run the setup script** on the RPi:
+   ```bash
+   cd ~/aida-kiosk
+   chmod +x setup.sh kiosk.sh
+   ./setup.sh
+   ```
+3. **Launch kiosk mode**:
+   ```bash
+   ./kiosk.sh
+   ```
+   This opens Chromium in full-screen kiosk mode, pointed at the AI Service's wake page.
+> [!NOTE]
+> Ensure the host machine's IP and ports (`5010` for AI, `5000` for Voice) are accessible from the RPi's network.
+---
+
 ## Postman Guide
 
 AIDA APIs can be tested directly using Postman. All microservices are proxied through the **Frontend Service (Port 5001)** for ease of use.
